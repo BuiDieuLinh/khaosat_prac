@@ -1,0 +1,148 @@
+@{
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Đăng nhập - Hệ thống khảo sát</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/devextreme/dx.light.css" asp-append-version="true" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/js/devextreme/dx.all.js"></script>
+    
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0;
+            color: #f1f5f9;
+        }
+
+        .login-card {
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 16px;
+            padding: 2.5rem;
+            width: 100%;
+            max-width: 440px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            animation: fadeIn 0.6s ease-out;
+        }
+
+        @@keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .login-header h2 {
+            font-weight: 700;
+            background: linear-gradient(to right, #38bdf8, #818cf8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.5rem;
+        }
+
+        .login-header p {
+            color: #94a3b8;
+            font-size: 0.9rem;
+            margin-bottom: 2rem;
+        }
+
+        .form-label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: black;
+            margin-bottom: 0.5rem;
+            display: block;
+        }
+
+        .dx-textbox, .dx-button {
+            border-radius: 8px !important;
+        }
+
+        .dx-texteditor-input {
+            font-size: 0.95rem !important;
+        }
+
+        .login-btn {
+            background: linear-gradient(135deg, #3b82f6 0%, #4f46e5 100%) !important;
+            border: none !important;
+            color: white !important;
+            font-weight: 600 !important;
+            transition: all 0.3s ease !important;
+        }
+
+        .login-btn:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.4);
+        }
+
+        .error-message {
+            background-color: rgba(239, 68, 68, 0.15);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #fca5a5;
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            margin-bottom: 1.5rem;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="login-card">
+        <div class="login-header text-center">
+            <h2>KHAO SAT PORTAL</h2>
+            <p>Đăng nhập hệ thống quản lý khảo sát nhân sự</p>
+        </div>
+
+        <div id="errorMessage" class="error-message"></div>
+
+        <div class="mb-3">
+            <label class="form-label">Mã nhân viên</label>
+            <div id="usernameInput"></div>
+        </div>
+
+        <div class="mb-4">
+            <label class="form-label">Mật khẩu</label>
+            <div id="passwordInput"></div>
+        </div>
+
+        <div class="mb-3 mt-4">
+            <div id="loginBtn"></div>
+        </div>
+    </div>
+
+    @(Html.DevExtreme().Toast()
+        .ID("loginToast")
+        .DisplayTime(3000)
+        .Width(350)
+        .Position(p => p
+            .My(HorizontalAlignment.Center, VerticalAlignment.Bottom)
+            .At(HorizontalAlignment.Center, VerticalAlignment.Bottom)
+            .Offset(0, -40)
+        )
+    )
+
+    <script>
+        window.authUrls = {
+            login: "@Url.Action("Login", "Auth")",
+            surveyIndex: "@Url.Action("Index", "Survey")"
+        };
+    </script>
+
+    <script src="~/js/common/validation.js" asp-append-version="true"></script>
+    <script src="~/js/auth-validation.js" asp-append-version="true"></script>
+    <script src="~/js/auth-api.js" asp-append-version="true"></script>
+    <script src="~/js/auth-event.js" asp-append-version="true"></script>
+    <script src="~/js/auth-create.js" asp-append-version="true"></script>
+</body>
+</html>

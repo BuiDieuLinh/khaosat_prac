@@ -1,0 +1,22 @@
+using System;
+
+namespace khaosat_api.DTOs
+{
+    public class SurveyDto
+    {
+        public Guid Id { get; set; }
+        public string Code { get; set; } = string.Empty;
+        public string Name { get; set; } = string.Empty;
+        public string? Description { get; set; }
+        public DateTime? StartDate { get; set; }
+        public DateTime? EndDate { get; set; }
+        public byte Status { get; set; }
+        public DateTime CreatedDate { get; set; }
+        public DateTime? UpdatedDate { get; set; }
+
+        public int TotalResponses { get; set; }
+        public int CompletedCount { get; set; }
+        public int IncompleteCount { get; set; }
+        public double CompletionRate { get; set; }
+    }
+}

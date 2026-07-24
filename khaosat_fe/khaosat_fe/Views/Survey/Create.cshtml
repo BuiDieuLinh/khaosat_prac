@@ -1,0 +1,208 @@
+@{
+    ViewData["Title"] = "Tạo khảo sát mới";
+}
+
+<div class="mb-4">
+    <a href="@Url.Action("Index", "Survey")" class="btn btn-outline-secondary mb-3">
+        <i class="dx-icon-arrowleft"></i> Quay lại danh sách
+    </a>
+    <h1 class="fw-bold text-dark mb-1">@ViewData["Title"]</h1>
+    <p class="text-muted mb-0">Thiết kế thông tin khảo sát và các tiêu chí câu hỏi động bên dưới.</p>
+</div>
+
+<div class="card shadow-sm border-0 mb-4" style="border-radius: 12px;">
+    <div class="card-body p-4">
+        <h5 class="card-title fw-bold mb-4">
+            1. Thông tin chung khảo sát
+        </h5>
+        
+        <div class="row g-3">
+            <div class="col-md-4">
+                <label class="form-label small">Mã khảo sát <span class="text-danger">*</span></label>
+                @(Html.DevExtreme().TextBox()
+                    .ID("surveyCode")
+                    .Placeholder("Ví dụ: KS_NV_2026")
+                )
+            </div>
+            <div class="col-md-8">
+                <label class="form-label small">Tên khảo sát <span class="text-danger">*</span></label>
+                @(Html.DevExtreme().TextBox()
+                    .ID("surveyName")
+                    .Placeholder("Nhập tiêu đề cuộc khảo sát...")
+                )
+            </div>
+            <div class="col-12">
+                <label class="form-label small">Mô tả khảo sát</label>
+                @(Html.DevExtreme().TextArea()
+                    .ID("surveyDescription")
+                    .Placeholder("Mô tả tóm tắt mục đích cuộc khảo sát...")
+                    .Height(80)
+                )
+            </div>
+            <div class="col-md-4">
+                <label class="form-label small">Ngày bắt đầu</label>
+                @(Html.DevExtreme().DateBox()
+                    .ID("surveyStartDate")
+                    .Type(DateBoxType.DateTime)
+                    .DisplayFormat("dd/MM/yyyy HH:mm")
+                    .Placeholder("Chọn ngày bắt đầu")
+                )
+            </div>
+            <div class="col-md-4">
+                <label class="form-label small">Ngày kết thúc</label>
+                @(Html.DevExtreme().DateBox()
+                    .ID("surveyEndDate")
+                    .Type(DateBoxType.DateTime)
+                    .DisplayFormat("dd/MM/yyyy HH:mm")
+                    .Placeholder("Chọn ngày kết thúc")
+                )
+            </div>
+            <div class="col-md-4">
+                <label class="form-label small">Trạng thái hoạt động</label>
+                @(Html.DevExtreme().SelectBox()
+                    .ID("surveyStatus")
+                    .DataSource(new[] { 
+                        new { Value = (byte)1, Text = "Đang hoạt động" }, 
+                        new { Value = (byte)0, Text = "Tạm đóng" } 
+                    })
+                    .ValueExpr("Value")
+                    .DisplayExpr("Text")
+                    .Value((byte)1)
+                )
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card shadow-sm border-0 mb-4" style="border-radius: 12px;">
+    <div class="card-body p-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h5 class="card-title fw-bold mb-0">
+                2. Thiết lập tiêu chí câu hỏi
+            </h5>
+            <div>
+                @(Html.DevExtreme().Button()
+                    .Text("Nhập từ excel")
+                    .Type(ButtonType.Default)
+                    .Icon("import")
+                    .StylingMode(ButtonStylingMode.Outlined)
+                    .OnClick("showImportPopup")
+                )
+                @(Html.DevExtreme().Button()
+                    .Text("Thêm câu hỏi mới")
+                    .Type(ButtonType.Default)
+                    .Icon("add")
+                    .OnClick("addQuestion")
+                )
+            </div>
+            
+        </div>
+
+        <div id="questionsContainer" class="d-flex flex-column gap-3">
+            <div id="emptyState" class="text-center py-4 text-muted">
+                <i class="dx-icon-help-outline" style="font-size: 2rem;"></i>
+                <p class="mt-2 mb-0">Chưa có câu hỏi nào được thêm. Hãy nhấn nút "Thêm câu hỏi mới" ở trên.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="d-flex justify-content-end mb-5">
+    @(Html.DevExtreme().Button()
+        .Text("Lưu Khảo sát")
+        .Type(ButtonType.Success)
+        .Icon("check")
+        .Width(200)
+        .Height(45)
+        .OnClick("saveSurvey")
+    )
+</div>
+
+@(Html.DevExtreme().Toast()
+    .ID("toastCreator")
+    .DisplayTime(3000)
+    .Width(350)
+    .Position(p => p
+        .My(HorizontalAlignment.Right, VerticalAlignment.Top)
+        .At(HorizontalAlignment.Right, VerticalAlignment.Top)
+        .Offset(-20, 20)
+    )
+)
+
+@(Html.DevExtreme().Popup()
+    .ID("importExcelPopup")
+    .Title("Nhập câu hỏi từ Excel")
+    .Width(550)
+    .Height(480)
+    .Visible(false)
+    .DragEnabled(true)
+    .ContentTemplate(@<text>
+        <div class="alert alert-secondary small mb-3">
+            <strong>Hướng dẫn:</strong> Tải file mẫu, điền các câu hỏi và chọn tệp để nhập. Đối với câu hỏi trắc nghiệm (Radio/Checkbox), các đáp án viết dưới dạng <code>Mã: Tên hiển thị</code>, phân tách bằng dấu chấm phẩy (;). Ví dụ: <code>1: Rất tốt; 2: Bình thường</code>.
+        </div>
+
+        <div class="d-flex justify-content-between align-items-center mb-3 pb-3 border-bottom">
+            <span class="small text-muted">Bước 1: Tải cấu trúc câu hỏi mẫu</span>
+            @(Html.DevExtreme().Button()
+                .Text("Tải file mẫu (.xlsx)")
+                .Type(ButtonType.Normal)
+                .StylingMode(ButtonStylingMode.Outlined)
+                .Icon("download")
+            )
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label small fw-bold mb-1">Bước 2: Chọn tệp Excel đã điền:</label>
+            @(Html.DevExtreme().FileUploader()
+                .ID("importExcelFile")
+                .SelectButtonText("Chọn tệp Excel")
+                .LabelText("")
+                .Accept(".xlsx, .xls")
+                .UploadMode(FileUploadMode.UseForm)
+            )
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label small fw-bold mb-1">Tùy chọn nhập:</label>
+            @(Html.DevExtreme().RadioGroup()
+                .ID("importMode")
+                .DataSource(new[] {
+                    new { Value = "overwrite", Text = "Ghi đè danh sách cũ" },
+                    new { Value = "append", Text = "Nối tiếp vào cuối" }
+                })
+                .ValueExpr("Value")
+                .DisplayExpr("Text")
+                .Value("overwrite")
+                .Layout(Orientation.Horizontal)
+            )
+        </div>
+
+        <div class="d-flex justify-content-end gap-2 mt-4 pt-3 border-top">
+            @(Html.DevExtreme().Button()
+                .Text("Hủy bỏ")
+                .Type(ButtonType.Normal)
+                .StylingMode(ButtonStylingMode.Outlined)
+                .OnClick("function() { $('#importExcelPopup').dxPopup('instance').hide(); }")
+            )
+            @(Html.DevExtreme().Button()
+                .Text("Thực hiện nhập")
+                .Type(ButtonType.Default)
+                .OnClick("function() { $('#importExcelPopup').dxPopup('instance').hide(); }")
+            )
+        </div>
+    </text>)
+)
+
+<script>
+    window.surveyUrls = {
+        createNested: "@Url.Action("CreateNested", "Survey")",
+        index: "@Url.Action("Index", "Survey")"
+    };
+</script>
+
+<script src="~/js/common/validation.js" asp-append-version="true"></script>
+<script src="~/js/survey-validation.js" asp-append-version="true"></script>
+<script src="~/js/survey-element.js" asp-append-version="true"></script>
+<script src="~/js/survey-api.js" asp-append-version="true"></script>
+<script src="~/js/survey-event.js" asp-append-version="true"></script>
+<script src="~/js/survey-create.js" asp-append-version="true"></script>

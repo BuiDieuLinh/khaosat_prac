@@ -1,0 +1,199 @@
+@model khaosat_fe.Models.SurveyDetailViewModel
+@using System.Text.Json
+@using DevExtreme.AspNet.Mvc
+
+@{
+    ViewData["Title"] = Model.Name;
+}
+
+<div class="mb-4">
+    <a href="@Url.Action("Index", "Survey")" class="btn btn-outline-secondary mb-3">
+        <i class="dx-icon-arrowleft"></i> Quay lại danh sách
+    </a>
+    <div class="card bg-light border-0 shadow-sm p-4">
+        <h1 class="display-6 fw-bold">@Model.Name</h1>
+        <p class="lead text-muted mb-0">@Model.Description</p>
+        <div class="mt-2 text-secondary small">   
+            <span>Mã khảo sát: <strong>@Model.Code</strong></span>
+            @if (Model.StartDate.HasValue)
+            {
+                <span class="ms-3">Bắt đầu: @Model.StartDate.Value.ToString("dd/MM/yyyy HH:mm")</span>
+            }
+            @if (Model.EndDate.HasValue)
+            {
+                <span class="ms-3">Kết thúc: @Model.EndDate.Value.ToString("dd/MM/yyyy HH:mm")</span>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- Thông tin người thực hiện -->
+<div class="card border shadow-sm mb-4 bg-light">
+    <div class="card-body p-4">
+        <h5 class="card-title mb-3">
+            <i class="dx-icon-user small me-2"></i> Thông tin người thực hiện khảo sát
+        </h5>
+        <div class="row g-3">
+            <div class="col-md-6">
+                <label class="form-label font-weight-bold text-secondary small">Họ và Tên:</label>
+                <p class="form-control-plaintext text-dark mb-0">@User.Identity?.Name</p>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label font-weight-bold text-secondary small">Mã nhân viên:</label>
+                <p class="form-control-plaintext text-dark mb-0">@User.FindFirst(System.Security.Claims.ClaimTypes.UserData)?.Value</p>
+            </div>
+        </div>
+        <input type="hidden" id="employeeId" value="@User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value" />
+    </div>
+</div>
+
+<!-- Form khảo sát động -->
+<div class="card border shadow-sm">
+    <div class="card-body">
+        <h5 class="card-title text-secondary mb-4">Nội dung khảo sát</h5>
+        <form id="surveyForm">
+            @foreach (var element in Model.Elements.OrderBy(x => x.SortOrder))
+            {
+                Dictionary<string, object>? config = null;
+                try
+                {
+                    config = JsonSerializer.Deserialize<Dictionary<string, object>>(element.ConfigType);
+                }
+                catch {}
+
+                config ??= new Dictionary<string, object>();
+
+                string dataType = config.ContainsKey("DataType") ? config["DataType"]?.ToString() ?? "Text" : "Text";
+                string caption = config.ContainsKey("Caption") ? config["Caption"]?.ToString() ?? element.FieldName : element.FieldName;
+                string inputHelper = config.ContainsKey("InputHelper") ? config["InputHelper"]?.ToString() ?? "" : "";
+                string helperText = config.ContainsKey("Helper") ? config["Helper"]?.ToString() ?? "" : "";
+                bool allowNull = !config.ContainsKey("AllowNull") || config["AllowNull"] is not JsonElement valJson || valJson.ValueKind != JsonValueKind.False;
+                bool isMultiSelect = config.ContainsKey("IsMultiSelect") && config["IsMultiSelect"] is JsonElement multiJson && multiJson.ValueKind == JsonValueKind.True;
+
+                <div class="mb-4 p-3 border-bottom">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <label class="form-label font-weight-bold mb-0">
+                            @caption 
+                            @if (!allowNull)
+                            {
+                                <span class="text-danger">*</span>
+                            }
+                        </label>
+                    </div>
+
+                    @if (element.Options != null && element.Options.Count > 0)
+                    {
+                        if (isMultiSelect)
+                        {
+                            @(Html.DevExtreme().List()
+                                .ID("element_" + element.Id)
+                                .DataSource(element.Options)
+                                .KeyExpr("Value")
+                                .DisplayExpr("DisplayText")
+                                .SelectionMode(ListSelectionMode.Multiple)
+                                .ShowSelectionControls(true)
+                                .Height("auto")
+                            )
+                        }
+                        else
+                        {
+                            @(Html.DevExtreme().RadioGroup()
+                                .ID("element_" + element.Id)
+                                .DataSource(element.Options)
+                                .ValueExpr("Value")
+                                .DisplayExpr("DisplayText")
+                            )
+                        }
+                    }
+                    else if (dataType == "Number")
+                    {
+                        @(Html.DevExtreme().NumberBox()
+                            .ID("element_" + element.Id)
+                            .Placeholder(inputHelper)
+                        )
+                    }
+                    else
+                    {
+                        @(Html.DevExtreme().TextBox()
+                            .ID("element_" + element.Id)
+                            .Placeholder(inputHelper)
+                        )
+                    }
+
+                    @if (!string.IsNullOrEmpty(helperText))
+                    {
+                        <div class="form-text text-muted mt-1"><small>@helperText</small></div>
+                    }
+                </div>
+            }
+
+            <div class="mt-4 d-flex justify-content-end">
+                @(Html.DevExtreme().Button()
+                    .Text("Gửi khảo sát")
+                    .Type(ButtonType.Success)
+                    .Icon("check")
+                    .Width(180)
+                    .Height(40)
+                    .OnClick("submitSurvey")
+                )
+            </div>
+        </form>
+    </div>
+</div>
+
+@(Html.DevExtreme().Toast()
+    .ID("toastDetail")
+    .DisplayTime(3000)
+    .Width(320)
+    .Position(p => p
+        .My(HorizontalAlignment.Right, VerticalAlignment.Top)
+        .At(HorizontalAlignment.Right, VerticalAlignment.Top)
+        .Offset(-20, 20)
+    )
+)
+
+<script>
+    window.surveyId = "@Model.Id";
+    window.surveyElements = [
+        @foreach (var element in Model.Elements)
+        {
+            var config = JsonSerializer.Deserialize<Dictionary<string, object>>(element.ConfigType);
+            bool isMultiSelect = config != null && config.ContainsKey("IsMultiSelect") && config["IsMultiSelect"] is JsonElement multiJson && multiJson.ValueKind == JsonValueKind.True;
+            bool hasOptions = element.Options != null && element.Options.Count > 0;
+
+            <text>
+            {
+                id: "@element.Id",
+                fieldName: "@element.FieldName",
+                hasOptions: @(hasOptions ? "true" : "false"),
+                isMultiSelect: @(isMultiSelect ? "true" : "false"),
+                options: [
+                    @if (hasOptions)
+                    {
+                        foreach (var opt in element.Options!)
+                        {
+                            <text>
+                            {
+                                id: "@opt.Id",
+                                value: "@opt.Value"
+                            },
+                            </text>
+                        }
+                    }
+                ]
+            },
+            </text>
+        }
+    ];
+
+    window.surveyUrls = {
+        submit: "@Url.Action("Submit", "Survey")",
+        index: "@Url.Action("Index", "Survey")"
+    };
+</script>
+
+<script src="~/js/common/validation.js" asp-append-version="true"></script>
+<script src="~/js/survey-element.js" asp-append-version="true"></script>
+<script src="~/js/survey-api.js" asp-append-version="true"></script>
+<script src="~/js/survey-event.js" asp-append-version="true"></script>
+<script src="~/js/survey-create.js" asp-append-version="true"></script>

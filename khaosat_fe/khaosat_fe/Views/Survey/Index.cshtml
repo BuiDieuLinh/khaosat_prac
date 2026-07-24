@@ -1,0 +1,101 @@
+@{
+ViewData["Title"] = "Danh sách khảo sát";
+}
+
+<div class="mb-3 d-flex justify-content-between align-items-center">
+    <div>
+        <h1 class="fw-bold text-dark mb-1">@ViewData["Title"]</h1>
+        <p class="text-muted mb-0">Vui lòng chọn khảo sát khả dụng bên dưới để thực hiện.</p>
+    </div>
+    <div>
+        @(Html.DevExtreme().Button()
+            .Text("Tạo khảo sát mới")
+            .Icon("add")
+            .Type(ButtonType.Default)
+            .OnClick("function() { window.location.href = '" + Url.Action("Create", "Survey") + "'; }")
+        )
+    </div>
+</div>
+
+@(Html.DevExtreme().CardView<khaosat_fe.Models.SurveyViewModel>()
+.ID("cardSurveys")
+.DataSource(ds => ds.Mvc()
+.Controller("Survey")
+.LoadAction("GetSurveys")
+.Key("Id")
+)
+.KeyExpr("Id")
+.CardsPerRow(1)
+.Paging(p => p.PageSize(6))
+.SearchPanel(s => s.Visible(true).Width(300).Placeholder("Tìm kiếm khảo sát..."))
+.CardTemplate(@<text>
+                   <div class="card shadow-sm border-0 position-relative" style="transition: all 0.3s ease; border-radius: 12px; overflow: hidden; background: #fff;">
+
+                       <div class="card-body py-3 ps-4 pe-3">
+                           <div class="row align-items-center g-3">
+                               <div class="col-md-2 d-flex flex-column gap-2 justify-content-center">
+                                   <span class="text-muted small fw-semibold">#<%- card.data.Code %></span>
+                                   <div>
+                                       <span class="badge <%- card.data.Status == 1 ? 'bg-success-subtle text-success border border-success-subtle' : 'bg-secondary-subtle text-secondary border border-secondary-subtle' %> px-2 py-1">
+                                           <%- card.data.Status == 1 ? 'Đang mở' : 'Đã đóng' %>
+                                       </span>
+                                   </div>
+                               </div>
+
+                               <!-- Cột 2: Tên & Mô tả -->
+                               <div class="col-md-3">
+                                   <h5 class="card-title text-dark fw-bold mb-1" style="font-size: 1.1rem;"><%- card.data.Name %></h5>
+                                   <p class="card-text text-muted mb-0 small text-truncate" style="max-width: 100%;">
+                                       <%- card.data.Description || "Không có mô tả cho khảo sát này." %>
+                                   </p>
+                               </div>
+
+                               <!-- Cột 3: Ngày bắt đầu & kết thúc -->
+                               <div class="col-md-3 small text-secondary">
+                                   <div class="d-flex align-items-center mb-1">
+                                       <span class="text-muted me-2" style="width: 60px;">Bắt đầu:</span>
+                                       <span class="fw-semibold text-dark"><%- card.data.StartDate ? DevExpress.localization.formatDate(new Date(card.data.StartDate), "dd/MM/yyyy HH:mm") : "N/A" %></span>
+                                   </div>
+                                   <div class="d-flex align-items-center">
+                                       <span class="text-muted me-2" style="width: 60px;">Kết thúc:</span>
+                                       <span class="fw-semibold text-dark"><%- card.data.EndDate ? DevExpress.localization.formatDate(new Date(card.data.EndDate), "dd/MM/yyyy HH:mm") : "N/A" %></span>
+                                   </div>
+                               </div>
+
+                               <!-- Cột Thống kê tổng quan (2 hàng) -->
+                               <div class="col-md-2 small text-secondary border-start border-light-subtle ps-3">
+                                   <!-- Hàng 1 -->
+                                   <div class="row g-1 mb-1">
+                                       <div class="col-6">
+                                           <span class="text-muted">Tổng:</span>
+                                           <span class="fw-bold text-dark ms-1"><%- card.data.TotalResponses %></span>
+                                       </div>
+                                       <div class="col-6 text-end">
+                                           <span class="text-muted">Tỷ lệ:</span>
+                                           <span class="fw-bold text-dark ms-1"><%- card.data.CompletionRate %>%</span>
+                                       </div>
+                                   </div>
+                                   <!-- Hàng 2 -->
+                                   <div class="row g-1">
+                                       <div class="col-6">
+                                           <span class="text-muted">Đã xong:</span>
+                                           <span class="fw-bold text-dark ms-1"><%- card.data.CompletedCount %></span>
+                                       </div>
+                                       <div class="col-6 text-end">
+                                           <span class="text-muted">Chưa:</span>
+                                           <span class="fw-bold text-dark ms-1"><%- card.data.IncompleteCount %></span>
+                                       </div>
+                                   </div>
+                               </div>
+
+                               <!-- Cột 4: Nút làm khảo sát -->
+                               <div class="col-md-2 text-md-end text-start">
+                                   <a class="btn btn-primary px-3 py-2 btn-sm fw-semibold rounded-2 <%- card.data.Status != 1 ? 'disabled' : '' %>" href="/Survey/Detail/<%- card.data.Id %>">
+                                       Làm khảo sát
+                                   </a>
+                               </div>
+                           </div>
+                       </div>
+                   </div>
+</text>)
+)
