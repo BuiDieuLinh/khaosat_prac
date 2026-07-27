@@ -1,5 +1,9 @@
+@model khaosat_fe.Models.SurveyDetailViewModel
+@using System.Text.Json
+@using DevExtreme.AspNet.Mvc
+
 @{
-    ViewData["Title"] = "Tạo khảo sát mới";
+    ViewData["Title"] = "Chỉnh sửa khảo sát";
 }
 
 <div class="mb-4">
@@ -7,7 +11,7 @@
         <i class="dx-icon-arrowleft"></i> Quay lại danh sách
     </a>
     <h1 class="fw-bold text-dark mb-1">@ViewData["Title"]</h1>
-    <p class="text-muted mb-0">Thiết kế thông tin khảo sát và các tiêu chí câu hỏi động bên dưới.</p>
+    <p class="text-muted mb-0">Cập nhật thông tin cuộc khảo sát và điều chỉnh các tiêu chí câu hỏi bên dưới.</p>
 </div>
 
 <div class="card shadow-sm mb-4">
@@ -21,6 +25,7 @@
                 <label class="form-label text-secondary fw-semibold small">Mã khảo sát <span class="text-danger">*</span></label>
                 @(Html.DevExtreme().TextBox()
                     .ID("surveyCode")
+                    .Value(Model.Code)
                     .Placeholder("Ví dụ: KS_NV_2026")
                 )
             </div>
@@ -28,6 +33,7 @@
                 <label class="form-label text-secondary fw-semibold small">Tên khảo sát <span class="text-danger">*</span></label>
                 @(Html.DevExtreme().TextBox()
                     .ID("surveyName")
+                    .Value(Model.Name)
                     .Placeholder("Nhập tiêu đề cuộc khảo sát...")
                 )
             </div>
@@ -35,6 +41,7 @@
                 <label class="form-label text-secondary fw-semibold small">Mô tả khảo sát</label>
                 @(Html.DevExtreme().TextArea()
                     .ID("surveyDescription")
+                    .Value(Model.Description)
                     .Placeholder("Mô tả tóm tắt mục đích cuộc khảo sát...")
                     .Height(80)
                 )
@@ -43,6 +50,7 @@
                 <label class="form-label text-secondary fw-semibold small">Ngày bắt đầu</label>
                 @(Html.DevExtreme().DateBox()
                     .ID("surveyStartDate")
+                    .Value(Model.StartDate)
                     .Type(DateBoxType.DateTime)
                     .DisplayFormat("dd/MM/yyyy HH:mm")
                     .Placeholder("Chọn ngày bắt đầu")
@@ -52,6 +60,7 @@
                 <label class="form-label text-secondary fw-semibold small">Ngày kết thúc</label>
                 @(Html.DevExtreme().DateBox()
                     .ID("surveyEndDate")
+                    .Value(Model.EndDate)
                     .Type(DateBoxType.DateTime)
                     .DisplayFormat("dd/MM/yyyy HH:mm")
                     .Placeholder("Chọn ngày kết thúc")
@@ -67,7 +76,7 @@
                     })
                     .ValueExpr("Value")
                     .DisplayExpr("Text")
-                    .Value((byte)1)
+                    .Value(Model.Status)
                 )
             </div>
         </div>
@@ -109,7 +118,7 @@
 
 <div class="d-flex justify-content-end mb-5">
     @(Html.DevExtreme().Button()
-        .Text("Lưu Khảo sát")
+        .Text("Lưu Thay Đổi")
         .Type(ButtonType.Success)
         .Icon("check")
         .Width(200)
@@ -196,9 +205,42 @@
 <script>
     window.Survey = window.Survey || {};
     window.Survey.Urls = {
-        createNested: "@Url.Action("CreateNested", "Survey")",
+        saveSurvey: "@Url.Action("UpdateNested", "Survey", new { id = Model.Id })",
         index: "@Url.Action("Index", "Survey")"
     };
+
+    $(document).ready(function() {
+        // Deserialize và dựng lại các câu hỏi cũ
+        const elementsJson = @Html.Raw(JsonSerializer.Serialize(Model.Elements));
+        if (elementsJson && elementsJson.length > 0) {
+            elementsJson.forEach(el => {
+                let config = {};
+                try {
+                    config = JSON.parse(el.ConfigType);
+                } catch(e) {}
+
+                let dataType = config.DataType || window.Survey.DataType.Text;
+                if (dataType === window.Survey.DataType.Select) {
+                    dataType = config.IsMultiSelect ? window.Survey.DataType.Checkbox : window.Survey.DataType.Radio;
+                }
+
+                const questionData = {
+                    fieldName: el.FieldName,
+                    caption: config.Caption || el.FieldName,
+                    dataType: dataType,
+                    required: !config.AllowNull,
+                    helper: config.Helper || config.InputHelper || "",
+                    options: el.Options ? el.Options.map(opt => ({
+                        value: opt.Value,
+                        displayText: opt.DisplayText
+                    })) : []
+                };
+
+                window.Survey.Element.addQuestion(questionData);
+            });
+        }
+        window.Survey.Element.toggleEmptyState();
+    });
 </script>
 
 <script src="~/js/common.js" asp-append-version="true"></script>

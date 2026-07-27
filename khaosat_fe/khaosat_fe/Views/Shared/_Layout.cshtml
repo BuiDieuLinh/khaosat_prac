@@ -3,11 +3,12 @@
     <head>
         <meta charset="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>@ViewData["Title"] - khaosat_fe</title>
+        <title>@ViewData["Title"] - Quản Lý Khảo Sát</title>
         <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
         <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
         <link rel="stylesheet" href="~/khaosat_fe.styles.css" asp-append-version="true" />
         <link rel="stylesheet" href="~/css/devextreme/dx.light.css" asp-append-version="true" />
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
         <script src="~/lib/jquery/dist/jquery.min.js"></script>
         <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
         <script src="~/js/site.js" asp-append-version="true"></script>
@@ -17,63 +18,65 @@
     </head>
     <body>
         <header>
-            <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
-                <div class="container-fluid">
-                    <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">khaosat_fe</a>
-                    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                    aria-expanded="false" aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Survey" asp-action="Index">Khảo sát</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
-                        </li>
-                    </ul>
-                    <ul class="navbar-nav">
-                        @if (User.Identity?.IsAuthenticated == true)
-                        {
-                            <li class="nav-item d-flex align-items-center me-3">
-                                <span class="text-secondary small">
-                                    Xin chào, <strong>@User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value</strong>
-                                </span>
-                            </li>
+            <nav class="navbar navbar-expand-md navbar-light bg-white mb-4 py-2 border-bottom">
+                <div class="container px-4">
+                    <a class="navbar-brand d-flex align-items-center" asp-area="" asp-controller="Home" asp-action="Index">
+                        <span>PORTAL KHẢO SÁT</span>
+                    </a>
+                    <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
+                        aria-expanded="false" aria-label="Toggle navigation">
+                        <span class="navbar-toggler-icon"></span>
+                    </button>
+                    <div class="navbar-collapse collapse d-md-inline-flex justify-content-between">
+                        <ul class="navbar-nav me-auto mb-2 mb-md-0 gap-1">
                             <li class="nav-item">
-                                <a class="btn btn-outline-danger btn-sm" asp-controller="Auth" asp-action="Logout">
-                                    Đăng xuất
+                                <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Home" && ViewContext.RouteData.Values["action"]?.ToString() == "Index" ? "active" : "")" asp-area="" asp-controller="Home" asp-action="Index">
+                                    <i class="dx-icon-home me-1 small"></i> Trang chủ
                                 </a>
                             </li>
-                        }
-                        else
-                        {
                             <li class="nav-item">
-                                <a class="btn btn-outline-primary btn-sm" asp-controller="Auth" asp-action="Login">
-                                    Đăng nhập
+                                <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Survey" ? "active" : "")" asp-area="" asp-controller="Survey" asp-action="Index">
+                                    <i class="dx-icon-selectall me-1 small"></i> Danh sách khảo sát
                                 </a>
                             </li>
-                        }
-                    </ul>
+                        </ul>
+                        <div class="d-flex align-items-center gap-3">
+                            @if (User.Identity?.IsAuthenticated == true)
+                            {
+                                <div class="text-end me-1">
+                                    <span class="text-muted d-block small" style="font-size: 0.75rem; line-height: 1;">Tài khoản</span>
+                                    <span class="text-dark fw-semibold small" style="font-size: 0.85rem;">@User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value</span>
+                                </div>
+                                <a class="btn btn-outline-secondary btn-sm d-flex align-items-center gap-1" asp-controller="Auth" asp-action="Logout">
+                                    <i class="dx-icon-runner small"></i> Đăng xuất
+                                </a>
+                            }
+                            else
+                            {
+                                <a class="btn btn-primary btn-sm d-flex align-items-center gap-1" asp-controller="Auth" asp-action="Login">
+                                    <i class="dx-icon-user small"></i> Đăng nhập
+                                </a>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </nav>
+        </header>
+        <div class="container mb-5">
+            <main role="main" class="pb-3">
+                @RenderBody()
+            </main>
+        </div>
+
+        <footer class="footer text-muted py-3 bg-white">
+            <div class="container text-center text-md-start d-md-flex justify-content-between align-items-center">
+                <span class="small">&copy; 2026 - Portal Khảo Sát Nhân Sự. Tất cả quyền được bảo lưu.</span>
+                <div class="mt-2 mt-md-0 small">
+                    <a asp-area="" asp-controller="Home" asp-action="Privacy" class="text-muted me-3">Chính sách bảo mật</a>
+                    <a href="#" class="text-muted">Hỗ trợ kỹ thuật</a>
                 </div>
             </div>
-        </nav>
-    </header>
-    <div class="container">
-        <main role="main" class="pb-3">
-            @RenderBody()
-        </main>
-    </div>
-
-    <footer class="border-top footer text-muted">
-        <div class="container">
-            &copy; 2026 - khaosat_fe - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
-        </div>
-    </footer>
+        </footer>
     <script>
         $(document).ajaxError(function (event, jqXHR, ajaxSettings, thrownError) {
         if (jqXHR.status === 401) {

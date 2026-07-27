@@ -130,5 +130,70 @@ namespace khaosat_api.Repositories
 
             cmd.ExecuteNonQuery();
         }
+
+        public void Update(Survey survey)
+        {
+            using var conn = _factory.Create();
+            conn.Open();
+
+            const string sql = @"
+                UPDATE Survey
+                SET Code = @Code,
+                    Name = @Name,
+                    Description = @Description,
+                    StartDate = @StartDate,
+                    EndDate = @EndDate,
+                    Status = @Status,
+                    UpdatedDate = @UpdatedDate
+                WHERE Id = @Id";
+
+            using var cmd = new SqlCommand(sql, conn);
+
+            cmd.Parameters.AddWithValue("@Id", survey.Id);
+            cmd.Parameters.AddWithValue("@Code", survey.Code);
+            cmd.Parameters.AddWithValue("@Name", survey.Name);
+            cmd.Parameters.AddWithValue("@Description", (object?)survey.Description ?? DBNull.Value);
+            cmd.Parameters.AddWithValue("@StartDate", (object?)survey.StartDate ?? DBNull.Value);
+            cmd.Parameters.AddWithValue("@EndDate", (object?)survey.EndDate ?? DBNull.Value);
+            cmd.Parameters.AddWithValue("@Status", survey.Status);
+            cmd.Parameters.AddWithValue("@UpdatedDate", (object?)survey.UpdatedDate ?? DBNull.Value);
+
+            cmd.ExecuteNonQuery();
+        }
+
+        public void DeleteElementsAndOptions(Guid surveyId)
+        {
+            using var conn = _factory.Create();
+            conn.Open();
+            using var transaction = conn.BeginTransaction();
+
+            try
+            {
+                const string sqlDeleteOptions = @"
+                    DELETE FROM SurveyElementOption 
+                    WHERE ElementId IN (SELECT Id FROM SurveyElement WHERE SurveyId = @SurveyId)";
+                using (var cmd = new SqlCommand(sqlDeleteOptions, conn, transaction))
+                {
+                    cmd.Parameters.AddWithValue("@SurveyId", surveyId);
+                    cmd.ExecuteNonQuery();
+                }
+
+                const string sqlDeleteElements = @"
+                    DELETE FROM SurveyElement 
+                    WHERE SurveyId = @SurveyId";
+                using (var cmd = new SqlCommand(sqlDeleteElements, conn, transaction))
+                {
+                    cmd.Parameters.AddWithValue("@SurveyId", surveyId);
+                    cmd.ExecuteNonQuery();
+                }
+
+                transaction.Commit();
+            }
+            catch
+            {
+                transaction.Rollback();
+                throw;
+            }
+        }
     }
 }

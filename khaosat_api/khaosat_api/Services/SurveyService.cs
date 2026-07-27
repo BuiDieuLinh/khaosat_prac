@@ -224,5 +224,68 @@ namespace khaosat_api.Services
                 }
             }
         }
+
+        public void UpdateNested(Guid id, SurveyCreateNestedDto dto)
+        {
+            var survey = _repository.GetById(id);
+            if (survey == null)
+            {
+                throw new InvalidOperationException("Khảo sát không tồn tại.");
+            }
+
+            if (survey.StartDate.HasValue && survey.StartDate.Value <= DateTime.Now)
+            {
+                throw new InvalidOperationException("Không thể chỉnh sửa khảo sát đã công khai (sau ngày bắt đầu).");
+            }
+
+            survey.Code = dto.Code;
+            survey.Name = dto.Name;
+            survey.Description = dto.Description;
+            survey.StartDate = dto.StartDate;
+            survey.EndDate = dto.EndDate;
+            survey.Status = dto.Status;
+            survey.UpdatedDate = DateTime.Now;
+
+            _repository.Update(survey);
+
+            _repository.DeleteElementsAndOptions(id);
+
+            if (dto.Elements != null)
+            {
+                foreach (var elDto in dto.Elements)
+                {
+                    var elementId = Guid.NewGuid();
+                    var element = new SurveyElement
+                    {
+                        Id = elementId,
+                        SurveyId = id,
+                        FieldName = elDto.FieldName,
+                        SortOrder = elDto.SortOrder,
+                        ConfigType = elDto.ConfigType
+                    };
+
+                    _elementRepository.Add(element);
+
+                    if (elDto.Options != null)
+                    {
+                        foreach (var optDto in elDto.Options)
+                        {
+                            var option = new SurveyElementOption
+                            {
+                                Id = Guid.NewGuid(),
+                                ElementId = elementId,
+                                Value = optDto.Value,
+                                DisplayText = optDto.DisplayText,
+                                SortOrder = optDto.SortOrder,
+                                IsDefault = optDto.IsDefault,
+                                IsActive = optDto.IsActive
+                            };
+
+                            _optionRepository.Add(option);
+                        }
+                    }
+                }
+            }
+        }
     }
 }

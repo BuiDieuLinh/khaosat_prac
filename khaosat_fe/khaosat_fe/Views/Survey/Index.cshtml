@@ -2,6 +2,14 @@
 ViewData["Title"] = "Danh sách khảo sát";
 }
 
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show mb-4" role="alert">
+        <i class="dx-icon-info small me-1"></i> @TempData["ErrorMessage"]
+        <button type="button" class="btn-close text-dark shadow-none" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
 <div class="mb-3 d-flex justify-content-between align-items-center">
     <div>
         <h1 class="fw-bold text-dark mb-1">@ViewData["Title"]</h1>
@@ -29,12 +37,12 @@ ViewData["Title"] = "Danh sách khảo sát";
 .Paging(p => p.PageSize(6))
 .SearchPanel(s => s.Visible(true).Width(300).Placeholder("Tìm kiếm khảo sát..."))
 .CardTemplate(@<text>
-                   <div class="card shadow-sm border-0 position-relative" style="transition: all 0.3s ease; border-radius: 12px; overflow: hidden; background: #fff;">
-
+                   <div class="card survey-row-card <%- card.data.Status == 1 ? 'status-active' : 'status-inactive' %> shadow-sm" style="overflow: hidden;">
                        <div class="card-body py-3 ps-4 pe-3">
                            <div class="row align-items-center g-3">
+                               <!-- Cột 1: Mã & Trạng thái -->
                                <div class="col-md-2 d-flex flex-column gap-2 justify-content-center">
-                                   <span class="text-muted small fw-semibold">#<%- card.data.Code %></span>
+                                   <span class="text-muted small fw-bold">#<%- card.data.Code %></span>
                                    <div>
                                        <span class="badge <%- card.data.Status == 1 ? 'bg-success-subtle text-success border border-success-subtle' : 'bg-secondary-subtle text-secondary border border-secondary-subtle' %> px-2 py-1">
                                            <%- card.data.Status == 1 ? 'Đang mở' : 'Đã đóng' %>
@@ -44,14 +52,14 @@ ViewData["Title"] = "Danh sách khảo sát";
 
                                <!-- Cột 2: Tên & Mô tả -->
                                <div class="col-md-3">
-                                   <h5 class="card-title text-dark fw-bold mb-1" style="font-size: 1.1rem;"><%- card.data.Name %></h5>
-                                   <p class="card-text text-muted mb-0 small text-truncate" style="max-width: 100%;">
+                                   <h5 class="card-title text-dark fw-bold mb-1" style="font-size: 1rem; letter-spacing: -0.01em;"><%- card.data.Name %></h5>
+                                   <p class="text-muted mb-0 small text-truncate" style="max-width: 100%; font-size: 0.85rem;">
                                        <%- card.data.Description || "Không có mô tả cho khảo sát này." %>
                                    </p>
                                </div>
 
                                <!-- Cột 3: Ngày bắt đầu & kết thúc -->
-                               <div class="col-md-3 small text-secondary">
+                               <div class="col-md-3 small text-secondary" style="font-size: 0.85rem;">
                                    <div class="d-flex align-items-center mb-1">
                                        <span class="text-muted me-2" style="width: 60px;">Bắt đầu:</span>
                                        <span class="fw-semibold text-dark"><%- card.data.StartDate ? DevExpress.localization.formatDate(new Date(card.data.StartDate), "dd/MM/yyyy HH:mm") : "N/A" %></span>
@@ -62,8 +70,8 @@ ViewData["Title"] = "Danh sách khảo sát";
                                    </div>
                                </div>
 
-                               <!-- Cột Thống kê tổng quan (2 hàng) -->
-                               <div class="col-md-2 small text-secondary border-start border-light-subtle ps-3">
+                               <!-- Cột 4: Thống kê tổng quan -->
+                               <div class="col-md-2 small text-secondary border-start border-light-subtle ps-3" style="font-size: 0.85rem;">
                                    <!-- Hàng 1 -->
                                    <div class="row g-1 mb-1">
                                        <div class="col-6">
@@ -78,7 +86,7 @@ ViewData["Title"] = "Danh sách khảo sát";
                                    <!-- Hàng 2 -->
                                    <div class="row g-1">
                                        <div class="col-6">
-                                           <span class="text-muted">Đã xong:</span>
+                                           <span class="text-muted">Xong:</span>
                                            <span class="fw-bold text-dark ms-1"><%- card.data.CompletedCount %></span>
                                        </div>
                                        <div class="col-6 text-end">
@@ -88,14 +96,19 @@ ViewData["Title"] = "Danh sách khảo sát";
                                    </div>
                                </div>
 
-                               <!-- Cột 4: Nút làm khảo sát -->
-                               <div class="col-md-2 text-md-end text-start">
-                                   <a class="btn btn-primary px-3 py-2 btn-sm fw-semibold rounded-2 <%- card.data.Status != 1 ? 'disabled' : '' %>" href="/Survey/Detail/<%- card.data.Id %>">
+                               <!-- Cột 5: Hành động -->
+                               <div class="col-md-2 text-md-end text-start d-flex flex-column gap-2 justify-content-center align-items-md-end">
+                                   <a class="btn btn-primary w-100 px-3 py-2 btn-sm fw-semibold <%- card.data.Status != 1 ? 'disabled' : '' %>" href="/Survey/Detail/<%- card.data.Id %>" style="font-size: 0.85rem;">
                                        Làm khảo sát
                                    </a>
+                                   <% if (!card.data.StartDate || new Date(card.data.StartDate) > new Date()) { %>
+                                       <a class="btn btn-outline-secondary w-100 px-3 py-2 btn-sm fw-semibold" href="/Survey/Edit/<%- card.data.Id %>" style="font-size: 0.85rem;">
+                                           <i class="dx-icon-edit small me-1"></i> Sửa
+                                       </a>
+                                   <% } %>
                                </div>
                            </div>
                        </div>
                    </div>
-</text>)
-)
+ </text>)
+ )

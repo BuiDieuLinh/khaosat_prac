@@ -1,8 +1,100 @@
-﻿@{
-    ViewData["Title"] = "Home Page";
+@{
+    ViewData["Title"] = "Trang chủ - Portal Khảo Sát";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+<div class="py-4">
+    <!-- Welcome Section -->
+    <div class="bg-white border p-4 mb-4" style="border-radius: 4px; border-color: var(--border-light) !important;">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h1 class="h3 fw-bold text-dark mb-2">Portal Khảo Sát Nhân Sự</h1>
+                <p class="text-secondary mb-0">Hệ thống khảo sát ý kiến nhân viên, hỗ trợ ban lãnh đạo lắng nghe ý kiến và cải thiện môi trường làm việc chuyên nghiệp, minh bạch hơn.</p>
+            </div>
+            <div class="col-md-4 text-md-end mt-3 mt-md-0">
+                @if (User.Identity?.IsAuthenticated == true)
+                {
+                    <span class="text-muted d-block small">Xin chào,</span>
+                    <span class="fw-bold text-primary">@User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value</span>
+                }
+                else
+                {
+                    <a class="btn btn-primary" asp-controller="Auth" asp-action="Login">Đăng nhập ngay</a>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Navigation Panels -->
+    <div class="row g-4 mb-4">
+        <!-- Panel 1: Làm khảo sát -->
+        <div class="col-md-6">
+            <div class="card h-100 border-0 shadow-sm" style="border-left: 4px solid var(--primary-color) !important;">
+                <div class="card-body p-4 d-flex flex-column justify-content-between">
+                    <div>
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="bg-light p-2 text-primary me-3 d-flex align-items-center justify-content-center" style="width: 42px; height: 42px; border-radius: 4px;">
+                                <i class="dx-icon-selectall" style="font-size: 1.5rem;"></i>
+                            </div>
+                            <h5 class="card-title mb-0 fw-bold">Khảo sát của tôi</h5>
+                        </div>
+                        <p class="text-secondary small mb-4">Danh sách các cuộc khảo sát nhân sự đang khả dụng. Hãy thực hiện điền thông tin khảo sát để đóng góp ý kiến của bạn.</p>
+                    </div>
+                    <div>
+                        <a href="@Url.Action("Index", "Survey")" class="btn btn-outline-primary btn-sm w-100">
+                            Xem khảo sát khả dụng <i class="dx-icon-arrowright small ms-1"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Panel 2: Quản lý / Tạo khảo sát -->
+        <div class="col-md-6">
+            <div class="card h-100 border-0 shadow-sm" style="border-left: 4px solid var(--success-color) !important;">
+                <div class="card-body p-4 d-flex flex-column justify-content-between">
+                    <div>
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="bg-light p-2 text-success me-3 d-flex align-items-center justify-content-center" style="width: 42px; height: 42px; border-radius: 4px;">
+                                <i class="dx-icon-add" style="font-size: 1.5rem;"></i>
+                            </div>
+                            <h5 class="card-title mb-0 fw-bold">Thiết kế khảo sát</h5>
+                        </div>
+                        <p class="text-secondary small mb-4">Công cụ dành cho Admin và Nhân sự thiết lập mã khảo sát, định cấu trúc câu hỏi động, và phát hành biểu mẫu khảo sát trực tuyến.</p>
+                    </div>
+                    <div>
+                        <a href="@Url.Action("Create", "Survey")" class="btn btn-outline-secondary btn-sm w-100" style="color: var(--success-color) !important; border-color: var(--success-color) !important;">
+                            Tạo khảo sát mới <i class="dx-icon-add small ms-1"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Instructions Guide -->
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-4">
+            <h5 class="card-title fw-bold mb-3"><i class="dx-icon-info small me-2 text-muted"></i> Hướng dẫn sử dụng nhanh</h5>
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <div class="border-start border-3 border-secondary ps-3 py-1">
+                        <span class="d-block fw-bold text-dark small">Bước 1: Đăng nhập</span>
+                        <p class="text-muted small mb-0">Sử dụng Mã nhân viên và mật khẩu được cấp để truy cập hệ thống.</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="border-start border-3 border-secondary ps-3 py-1">
+                        <span class="d-block fw-bold text-dark small">Bước 2: Chọn khảo sát</span>
+                        <p class="text-muted small mb-0">Truy cập menu Khảo sát, xem danh sách khảo sát đang mở và bấm "Làm khảo sát".</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="border-start border-3 border-secondary ps-3 py-1">
+                        <span class="d-block fw-bold text-dark small">Bước 3: Điền & gửi kết quả</span>
+                        <p class="text-muted small mb-0">Trả lời đầy đủ các tiêu chí bắt buộc và nhấn "Gửi khảo sát" để hoàn thành.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>

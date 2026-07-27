@@ -8,6 +8,8 @@ namespace khaosat_api.Repositories.Interfaces
         List<Survey> GetAll();
         Survey? GetById(Guid id);
         void Add(Survey survey);
+        void Update(Survey survey);
         void UpdateStatus(Guid id, byte status);
+        void DeleteElementsAndOptions(Guid surveyId);
     }
 }

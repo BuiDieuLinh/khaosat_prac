@@ -8,5 +8,6 @@ namespace khaosat_api.Services.Interfaces
         SurveyDetailDto? GetSurveyDetail(Guid id);
         void SubmitSurvey(SurveySubmitDto dto);
         void CreateNested(SurveyCreateNestedDto dto);
+        void UpdateNested(Guid id, SurveyCreateNestedDto dto);
     }
 }

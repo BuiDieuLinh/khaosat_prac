@@ -135,5 +135,58 @@ namespace khaosat_fe.Controllers
                 return StatusCode(500, ex.Message);
             }
         }
+
+        [HttpGet]
+        public async Task<IActionResult> Edit(Guid id)
+        {
+            AttachBearerToken();
+            try
+            {
+                var detail = await _httpClient.GetFromJsonAsync<SurveyDetailViewModel>($"api/survey/{id}");
+                if (detail == null)
+                {
+                    TempData["ErrorMessage"] = "Không tìm thấy khảo sát.";
+                    return RedirectToAction("Index");
+                }
+
+                if (detail.StartDate.HasValue && detail.StartDate.Value <= DateTime.Now)
+                {
+                    TempData["ErrorMessage"] = "Không thể chỉnh sửa khảo sát đã công khai (sau ngày bắt đầu).";
+                    return RedirectToAction("Index");
+                }
+
+                return View(detail);
+            }
+            catch
+            {
+                TempData["ErrorMessage"] = "Đã xảy ra lỗi khi lấy thông tin khảo sát.";
+                return RedirectToAction("Index");
+            }
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> UpdateNested(Guid id, [FromBody] SurveyCreateNestedViewModel model)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            AttachBearerToken();
+            try
+            {
+                var response = await _httpClient.PutAsJsonAsync($"api/survey/{id}", model);
+                if (response.IsSuccessStatusCode)
+                {
+                    return Ok(new { message = "Survey updated successfully" });
+                }
+                var errorMsg = await response.Content.ReadAsStringAsync();
+                return BadRequest(errorMsg);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ex.Message);
+            }
+        }
     }
 }

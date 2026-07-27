@@ -8,7 +8,6 @@ namespace khaosat_api.Controllers
     [Authorize]
     [ApiController]
     [Route("api/survey")]
-    [Route("survey")]
     public class SurveyController : Controller
     {
         private readonly ISurveyService _surveyService;
@@ -74,6 +73,25 @@ namespace khaosat_api.Controllers
             }
             _surveyService.CreateNested(dto);
             return Ok(new { message = "Nested survey created successfully" });
+        }
+
+        [HttpPut("{id}")]
+        public IActionResult Update(Guid id, SurveyCreateNestedDto dto)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            try
+            {
+                _surveyService.UpdateNested(id, dto);
+                return Ok(new { message = "Survey updated successfully" });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
         }
     }
 }
