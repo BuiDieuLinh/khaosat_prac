@@ -372,3 +372,31 @@ footer a:hover {
   font-size: 0.85rem !important;
   padding: 4px 8px !important;
 }
+
+.dx-widget.dx-invalid,
+.dx-invalid.dx-texteditor,
+.dx-invalid.dx-texteditor-input,
+.dx-invalid.dx-texteditor-container,
+.dx-invalid .dx-texteditor-container,
+.dx-invalid.dx-state-hover,
+.dx-invalid.dx-state-focused {
+    border-color: #ef4444 !important;
+    box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.15) !important;
+}
+
+.question-block {
+  transition: all 0.2s ease;
+}
+
+.question-block.dx-invalid-block {
+  border: 1px solid #fca5a5 !important;
+  border-radius: 6px !important;
+  background-color: #fffafb !important;
+  box-shadow: 0 4px 6px -1px rgba(239, 68, 68, 0.05) !important;
+}
+
+.question-block div.text-danger.small {
+  color: #ef4444 !important;
+  font-weight: 500 !important;
+  margin-top: 6px !important;
+}

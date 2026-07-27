@@ -23,6 +23,9 @@ window.Survey.Validation.validateSurvey = function (code, name, startDate, endDa
         window.Survey.Utils.showToast("Vui lòng điền Mã khảo sát và Tên khảo sát!", "error");
         return false;
     }
+    if (!startDate) {
+        window.Survey.Utils.showToast("Vui lòng nhập ngày bắt đầu!", "error");
+    }
 
     if (startDate && endDate && new Date(endDate) < new Date(startDate)) {
         window.Survey.Utils.showToast("Ngày kết thúc phải lớn hơn hoặc bằng ngày bắt đầu!", "error");
@@ -35,6 +38,77 @@ window.Survey.Validation.validateSurvey = function (code, name, startDate, endDa
     }
 
     return true;
+};
+
+window.Survey.Validation.validateSurveyResponseAnswers = function (surveyElements) {
+    if (!window.jQuery || !$.fn.validate) {
+        return true;
+    }
+
+    let validator = $("#surveyForm").data("validator");
+    if (!validator) {
+        validator = $("#surveyForm").validate({
+            ignore: [],
+            errorClass: "text-danger small d-block mt-1",
+            errorElement: "div",
+            errorPlacement: function (error, element) {
+                const widget = element.closest(".dx-widget");
+                if (widget.length) {
+                    error.insertAfter(widget);
+                } else {
+                    error.insertAfter(element);
+                }
+            },
+            highlight: function (element) {
+                const name = $(element).attr("name");
+                const widget = $("#" + name);
+                if (widget.length) {
+                    widget.addClass("dx-invalid");
+                } else {
+                    $(element).closest(".dx-widget").addClass("dx-invalid");
+                }
+                $(element).closest(".question-block").addClass("dx-invalid-block");
+            },
+            unhighlight: function (element) {
+                const name = $(element).attr("name");
+                const widget = $("#" + name);
+                if (widget.length) {
+                    widget.removeClass("dx-invalid");
+                } else {
+                    $(element).closest(".dx-widget").removeClass("dx-invalid");
+                }
+                $(element).closest(".question-block").removeClass("dx-invalid-block");
+            }
+        });
+
+        surveyElements.forEach(el => {
+            const name = "element_" + el.id;
+            const input = $(`[name="${name}"]`);
+            if (input.length) {
+                const rules = {};
+                const messages = {};
+
+                if (el.required) {
+                    rules.required = true;
+                    messages.required = "Không được để trống";
+                }
+
+                if (el.dataType === "Number") {
+                    rules.number = true;
+                    rules.min = 0;
+                    messages.number = "Vui lòng nhập số hợp lệ";
+                    messages.min = "Giá trị không được âm";
+                }
+
+                input.rules("add", {
+                    ...rules,
+                    messages: messages
+                });
+            }
+        });
+    }
+
+    return $("#surveyForm").valid();
 };
 
 window.Survey.Element.questionCounter = 0;
@@ -99,7 +173,6 @@ window.Survey.Element.addQuestion = function (existingData) {
     $("#questionsContainer").append(html);
     window.Survey.Element.toggleEmptyState();
 
-    // Khởi tạo các Widget DevExtreme cho Câu hỏi này
     $(`#qFieldName_${qId}`).dxTextBox({
         placeholder: `Ví dụ: lyDoNghi, mucDoHaiLong...`,
         mode: "text",
@@ -125,7 +198,6 @@ window.Survey.Element.addQuestion = function (existingData) {
             const section = $(`#optionsSection_${qId}`);
             if (e.value === "Radio" || e.value === "Checkbox") {
                 section.show();
-                // Nếu chưa có option nào, tự động thêm 1 option cho người dùng
                 if ($(`#optionsContainer_${qId} .option-row`).length === 0) {
                     window.Survey.Element.addOption(qId);
                 }
@@ -214,10 +286,9 @@ window.Survey.Element.gatherSurveyData = function () {
         if (!fieldName || !caption) {
             window.Survey.Utils.showToast(`Câu hỏi thứ ${index + 1} thiếu FieldName hoặc Caption!`, "error");
             hasError = true;
-            return false; // Break loop
+            return false;
         }
 
-        // Tạo ConfigType JSON dạng chuỗi
         const config = {
             DataType: (dataType === "Radio" || dataType === "Checkbox") ? "Select" : dataType,
             Caption: caption,
@@ -276,24 +347,30 @@ window.Survey.Element.gatherDetailAnswers = function (surveyElements) {
     for (let i = 0; i < surveyElements.length; i++) {
         const el = surveyElements[i];
         const widgetId = "#element_" + el.id;
+        const elDom = $(widgetId);
+        if (!elDom.length) continue;
+
         let value = null;
+        const listInstance = elDom.data("dxList");
+        const radioInstance = elDom.data("dxRadioGroup");
+        const textInstance = elDom.data("dxTextBox");
+        const numberInstance = elDom.data("dxNumberBox");
 
         if (el.hasOptions) {
             if (el.isMultiSelect) {
-                const listWidget = $(widgetId).dxList("instance");
-                if (listWidget) {
-                    value = listWidget.option("selectedItemKeys");
+                if (listInstance) {
+                    value = listInstance.option("selectedItemKeys");
                 }
             } else {
-                const radioWidget = $(widgetId).dxRadioGroup("instance");
-                if (radioWidget) {
-                    value = radioWidget.option("value");
+                if (radioInstance) {
+                    value = radioInstance.option("value");
                 }
             }
         } else {
-            const input = $(widgetId).dxTextBox("instance") || $(widgetId).dxNumberBox("instance");
-            if (input) {
-                value = input.option("value");
+            if (textInstance) {
+                value = textInstance.option("value");
+            } else if (numberInstance) {
+                value = numberInstance.option("value");
             }
         }
 
@@ -370,7 +447,6 @@ window.Survey.Api.submitSurveyResponse = function (payload) {
             }, 1500);
         },
         error: function (err) {
-            // Parse error message if JSON, else use text
             let cleanMsg = "Lỗi máy chủ";
             try {
                 const errObj = JSON.parse(err.responseText);
@@ -387,9 +463,6 @@ window.Survey.Api.submitSurveyResponse = function (payload) {
     });
 };
 
-// ==========================================
-// 5. EVENTS (survey-event.js & survey-create.js)
-// ==========================================
 window.Survey.Event.saveSurvey = function () {
     const code = $("#surveyCode").dxTextBox("instance").option("value");
     const name = $("#surveyName").dxTextBox("instance").option("value");
@@ -427,6 +500,9 @@ window.Survey.Event.submitSurvey = function () {
         return;
     }
 
+    const isValid = window.Survey.Validation.validateSurveyResponseAnswers(window.Survey.surveyElements);
+    if (!isValid) return;
+
     const answers = window.Survey.Element.gatherDetailAnswers(window.Survey.surveyElements);
     const payload = {
         surveyId: window.Survey.surveyId,
@@ -444,11 +520,46 @@ window.Survey.Event.showImportPopup = function () {
     }
 };
 
-// ==========================================
-// 6. INITIALIZATION (survey-create.js)
-// ==========================================
 $(document).ready(function () {
     if ($("#questionsContainer").length > 0) {
         window.Survey.Element.toggleEmptyState();
+    }
+
+    if ($("#surveyTargetDepartment").length > 0 && $("#surveyTargetPosition").length > 0) {
+        setTimeout(() => {
+            const parentWidget = $("#surveyTargetDepartment").data("dxSelectBox");
+            const childWidget = $("#surveyTargetPosition").data("dxSelectBox");
+
+            if (parentWidget && childWidget) {
+                const positionData = {
+                    "IT": [
+                        { Value: "dev", DisplayText: "Lập trình .NET (3)" },
+                        { Value: "qa", DisplayText: "Kiểm thử (QA) (2)" },
+                        { Value: "devops", DisplayText: "DevOps (1)" }
+                    ],
+                    "HR": [
+                        { Value: "recruitment", DisplayText: "Tuyển dụng" },
+                        { Value: "cb", DisplayText: "Lương & Phúc lợi (C&B)" },
+                        { Value: "training", DisplayText: "Đào tạo" }
+                    ],
+                    "Sales": [
+                        { Value: "sales_north", DisplayText: "Sales miền Bắc" },
+                        { Value: "sales_south", DisplayText: "Sales miền Nam" }
+                    ],
+                    "All": [
+                        { Value: "all", DisplayText: "Tất cả nhân sự" }
+                    ]
+                };
+
+                parentWidget.on("valueChanged", function (e) {
+                    const selectedDept = e.value;
+                    const list = positionData[selectedDept] || [];
+
+                    childWidget.option("value", null);
+                    childWidget.option("dataSource", list);
+                    childWidget.option("disabled", list.length === 0);
+                });
+            }
+        }, 100);
     }
 });

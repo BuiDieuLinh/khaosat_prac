@@ -79,6 +79,30 @@
                     .Value(Model.Status)
                 )
             </div>
+            <div class="col-md-6 mt-3">
+                <label class="form-label text-secondary fw-semibold small">Phòng ban mục tiêu</label>
+                @(Html.DevExtreme().SelectBox()
+                    .ID("surveyTargetDepartment")
+                    .DataSource(new[] { 
+                        new { Value = "IT", Text = "Phòng Công nghệ thông tin" }, 
+                        new { Value = "HR", Text = "Phòng Nhân sự" }, 
+                        new { Value = "Sales", Text = "Phòng Kinh doanh (Sales)" } 
+                    })
+                    .ValueExpr("Value")
+                    .DisplayExpr("Text")
+                    .Placeholder("Chọn phòng ban mục tiêu...")
+                )
+            </div>
+            <div class="col-md-6 mt-3">
+                <label class="form-label text-secondary fw-semibold small">Vị trí mục tiêu</label>
+                @(Html.DevExtreme().SelectBox()
+                    .ID("surveyTargetPosition")
+                    .ValueExpr("Value")
+                    .DisplayExpr("DisplayText")
+                    .Placeholder("Chọn vị trí...")
+                    .Disabled(true)
+                )
+            </div>
         </div>
     </div>
 </div>

@@ -94,15 +94,24 @@ ViewData["Title"] = Model.Name;
                             .SelectionMode(ListSelectionMode.Multiple)
                             .ShowSelectionControls(true)
                             .Height("auto")
+                            .OnSelectionChanged("function(e) { " +
+                                "var selectedKeys = e.component.option('selectedItemKeys'); " +
+                                "var val = (selectedKeys && selectedKeys.length) ? JSON.stringify(selectedKeys) : ''; " +
+                                "$('#hidden_element_" + element.Id + "').val(val).trigger('change'); " +
+                                "if (window.jQuery && $.fn.validate) { $('#hidden_element_" + element.Id + "').valid(); }" +
+                            "}")
                             )
+                            <input type="hidden" id="hidden_element_@element.Id" name="element_@element.Id" />
                         }
                         else
                         {
                             @(Html.DevExtreme().RadioGroup()
                             .ID("element_" + element.Id)
+                            .Name("element_" + element.Id)
                             .DataSource(element.Options)
                             .ValueExpr("Value")
                             .DisplayExpr("DisplayText")
+                            .OnValueChanged("function(e) { if (window.jQuery && $.fn.validate) { $('[name=\"element_" + element.Id + "\"]').valid(); } }")
                             )
                         }
                     }
@@ -110,6 +119,7 @@ ViewData["Title"] = Model.Name;
                     {
                         @(Html.DevExtreme().NumberBox()
                         .ID("element_" + element.Id)
+                        .Name("element_" + element.Id)
                         .Placeholder(inputHelper)
                         )
                     }
@@ -117,6 +127,7 @@ ViewData["Title"] = Model.Name;
                     {
                         @(Html.DevExtreme().TextBox()
                         .ID("element_" + element.Id)
+                        .Name("element_" + element.Id)
                         .Placeholder(inputHelper)
                         )
                     }
@@ -162,11 +173,17 @@ ViewData["Title"] = Model.Name;
         var config = JsonSerializer.Deserialize<Dictionary<string, object>>(element.ConfigType);
         bool isMultiSelect = config != null && config.ContainsKey("IsMultiSelect") && config["IsMultiSelect"] is JsonElement multiJson && multiJson.ValueKind == JsonValueKind.True;
         bool hasOptions = element.Options != null && element.Options.Count > 0;
+        string caption = config != null && config.ContainsKey("Caption") ? config["Caption"]?.ToString() ?? element.FieldName : element.FieldName;
+        string dataType = config != null && config.ContainsKey("DataType") ? config["DataType"]?.ToString() ?? "Text" : "Text";
+        bool allowNull = config == null || !config.ContainsKey("AllowNull") || config["AllowNull"] is not JsonElement valJson || valJson.ValueKind != JsonValueKind.False;
 
         <text>
             {
                 id: "@element.Id",
                 fieldName: "@element.FieldName",
+                caption: @Html.Raw(JsonSerializer.Serialize(caption)),
+                dataType: "@dataType",
+                required: @(allowNull ? "false" : "true"),
                 hasOptions: @(hasOptions ? "true" : "false"),
                 isMultiSelect: @(isMultiSelect ? "true" : "false"),
                 options: [
@@ -194,5 +211,6 @@ ViewData["Title"] = Model.Name;
             };
         </script>
 
+        @await Html.PartialAsync("_ValidationScriptsPartial")
         <script src="~/js/common.js" asp-append-version="true"></script>
         <script src="~/js/survey.js" asp-append-version="true"></script>

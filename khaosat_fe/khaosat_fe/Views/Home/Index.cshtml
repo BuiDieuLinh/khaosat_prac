@@ -14,7 +14,7 @@
                 @if (User.Identity?.IsAuthenticated == true)
                 {
                     <span class="text-muted d-block small">Xin chào,</span>
-                    <span class="fw-bold text-primary">@User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value</span>
+                    <span class="fw-bold text-primary">@User.Identity.Name</span>
                 }
                 else
                 {

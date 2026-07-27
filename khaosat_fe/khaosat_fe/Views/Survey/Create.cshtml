@@ -40,7 +40,7 @@
                 )
             </div>
             <div class="col-md-4">
-                <label class="form-label text-secondary fw-semibold small">Ngày bắt đầu</label>
+                <label class="form-label text-secondary fw-semibold small">Ngày bắt đầu <span class="text-danger">*</span></label>
                 @(Html.DevExtreme().DateBox()
                     .ID("surveyStartDate")
                     .Type(DateBoxType.DateTime)
@@ -62,12 +62,37 @@
                 @(Html.DevExtreme().SelectBox()
                     .ID("surveyStatus")
                     .DataSource(new[] { 
-                        new { Value = (byte)1, Text = "Đang hoạt động" }, 
-                        new { Value = (byte)0, Text = "Tạm đóng" } 
+                        new { Value = (byte)1, Text = "Đang mở" }, 
+                        new { Value = (byte)0, Text = "Đã đóng" } 
                     })
                     .ValueExpr("Value")
                     .DisplayExpr("Text")
                     .Value((byte)1)
+                )
+            </div>
+            <div class="col-md-6 mt-3">
+                <label class="form-label text-secondary fw-semibold small">Phòng ban áp dụng <span class="text-danger">*</span></label>
+                @(Html.DevExtreme().SelectBox()
+                    .ID("surveyTargetDepartment")
+                    .DataSource(new[] { 
+                        new { Value = "IT", Text = "Phòng Công nghệ thông tin" }, 
+                        new { Value = "HR", Text = "Phòng Nhân sự" }, 
+                        new { Value = "Sales", Text = "Phòng Kinh doanh (Sales)" },
+                        new { Value = "All", Text = "Tất cả nhân sự công ty"}
+                    })
+                    .ValueExpr("Value")
+                    .DisplayExpr("Text")
+                    .Placeholder("Chọn phòng ban mục tiêu...")
+                )
+            </div>
+            <div class="col-md-6 mt-3">
+                <label class="form-label text-secondary fw-semibold small">Vị trí áp dụng <span class="text-danger">*</span></label>
+                @(Html.DevExtreme().SelectBox()
+                    .ID("surveyTargetPosition")
+                    .ValueExpr("Value")
+                    .DisplayExpr("DisplayText")
+                    .Placeholder("Chọn vị trí...")
+                    .Disabled(true)
                 )
             </div>
         </div>

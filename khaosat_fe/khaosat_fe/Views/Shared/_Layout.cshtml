@@ -45,9 +45,9 @@
                             {
                                 <div class="text-end me-1">
                                     <span class="text-muted d-block small" style="font-size: 0.75rem; line-height: 1;">Tài khoản</span>
-                                    <span class="text-dark fw-semibold small" style="font-size: 0.85rem;">@User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value</span>
+                                    <span class="text-dark fw-semibold small" style="font-size: 0.85rem;">@User.Identity.Name</span>
                                 </div>
-                                <a class="btn btn-outline-secondary btn-sm d-flex align-items-center gap-1" asp-controller="Auth" asp-action="Logout">
+                                <a class="btn btn-outline-danger btn-sm d-flex align-items-center gap-1" asp-controller="Auth" asp-action="Logout">
                                     <i class="dx-icon-runner small"></i> Đăng xuất
                                 </a>
                             }

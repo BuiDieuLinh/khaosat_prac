@@ -1,9 +1,11 @@
-using Microsoft.AspNetCore.Mvc;
 using khaosat_api.DTOs;
 using khaosat_api.Services.Interfaces;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 
 namespace khaosat_api.Controllers
 {
+    [AllowAnonymous]
     [ApiController]
     [Route("api/auth")]
     public class AuthController : ControllerBase
