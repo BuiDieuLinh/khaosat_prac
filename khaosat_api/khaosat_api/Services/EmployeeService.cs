@@ -3,7 +3,6 @@ using khaosat_api.Models;
 using khaosat_api.Repositories.Interfaces;
 using khaosat_api.Services.Interfaces;
 using Microsoft.IdentityModel.Tokens;
-using System;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;

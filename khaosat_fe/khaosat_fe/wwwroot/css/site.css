@@ -19,6 +19,7 @@
   --border-light: #e2e8f0;
   /* Slate 200 */
   --card-bg: #ffffff;
+  --card-bg-hover: #f5f5f5;
 }
 
 html {
@@ -333,23 +334,13 @@ footer a:hover {
 
 /* Survey Specific Style Enhancements */
 .survey-row-card {
-  border-left: 4px solid var(--border-color) !important;
+  border: none !important;
   background: var(--card-bg);
   transition: all 0.15s ease;
 }
 
-.survey-row-card.status-active {
-  border-left-color: var(--success-color) !important;
-}
-
-.survey-row-card.status-inactive {
-  border-left-color: var(--text-muted) !important;
-}
-
 .survey-row-card:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.08), 0 2px 4px -1px rgba(0, 0, 0, 0.04) !important;
-  border-color: var(--border-color) !important;
+    background: var(--card-bg-hover);
 }
 
 /* Custom Form Controls Overrides for Corporate Styling */
@@ -399,4 +390,13 @@ footer a:hover {
   color: #ef4444 !important;
   font-weight: 500 !important;
   margin-top: 6px !important;
+}
+
+/* Loại bỏ đường viền (border-bottom/top) của các item checkbox (dxList) và viền ngoài trong thẻ câu hỏi */
+.question-block .dx-list {
+  border: none !important;
+}
+.question-block .dx-list-item {
+  border-top: none !important;
+  border-bottom: none !important;
 }

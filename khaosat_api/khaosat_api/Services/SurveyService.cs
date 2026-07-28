@@ -2,9 +2,6 @@ using khaosat_api.DTOs;
 using khaosat_api.Models;
 using khaosat_api.Repositories.Interfaces;
 using khaosat_api.Services.Interfaces;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace khaosat_api.Services
 {
@@ -43,8 +40,8 @@ namespace khaosat_api.Services
                 var status = x.Status;
                 if (x.Status == 1 && x.EndDate.HasValue && x.EndDate.Value < DateTime.Now)
                 {
-                    status = 0; // Hết hạn
-                    _repository.UpdateStatus(x.Id, 0); // Cập nhật trạng thái xuống CSDL
+                    status = 0; 
+                    _repository.UpdateStatus(x.Id, 0); 
                 }
 
                 completedCounts.TryGetValue(x.Id, out int completedCount);

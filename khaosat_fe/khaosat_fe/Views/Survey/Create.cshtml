@@ -1,5 +1,5 @@
 @{
-    ViewData["Title"] = "Tạo khảo sát mới";
+ViewData["Title"] = "Tạo khảo sát mới";
 }
 
 <div class="mb-4">
@@ -15,84 +15,101 @@
         <h5 class="card-title fw-bold mb-4">
             1. Thông tin chung khảo sát
         </h5>
-        
+
         <div class="row g-3">
             <div class="col-md-4">
                 <label class="form-label text-secondary fw-semibold small">Mã khảo sát <span class="text-danger">*</span></label>
                 @(Html.DevExtreme().TextBox()
-                    .ID("surveyCode")
-                    .Placeholder("Ví dụ: KS_NV_2026")
+                .ID("surveyCode")
+                .Placeholder("Ví dụ: KS_NV_2026")
                 )
             </div>
             <div class="col-md-8">
                 <label class="form-label text-secondary fw-semibold small">Tên khảo sát <span class="text-danger">*</span></label>
                 @(Html.DevExtreme().TextBox()
-                    .ID("surveyName")
-                    .Placeholder("Nhập tiêu đề cuộc khảo sát...")
+                .ID("surveyName")
+                .Placeholder("Nhập tiêu đề cuộc khảo sát...")
                 )
             </div>
             <div class="col-12">
                 <label class="form-label text-secondary fw-semibold small">Mô tả khảo sát</label>
                 @(Html.DevExtreme().TextArea()
-                    .ID("surveyDescription")
-                    .Placeholder("Mô tả tóm tắt mục đích cuộc khảo sát...")
-                    .Height(80)
+                .ID("surveyDescription")
+                .Placeholder("Mô tả tóm tắt mục đích cuộc khảo sát...")
+                .Height(80)
                 )
             </div>
             <div class="col-md-4">
                 <label class="form-label text-secondary fw-semibold small">Ngày bắt đầu <span class="text-danger">*</span></label>
                 @(Html.DevExtreme().DateBox()
-                    .ID("surveyStartDate")
-                    .Type(DateBoxType.DateTime)
-                    .DisplayFormat("dd/MM/yyyy HH:mm")
-                    .Placeholder("Chọn ngày bắt đầu")
-                )
+                .ID("surveyStartDate")
+                .Type(DateBoxType.DateTime)
+                .DisplayFormat("dd/MM/yyyy HH:mm")
+                .Placeholder("Chọn ngày bắt đầu")
+                .Value(DateTime.Now))
             </div>
             <div class="col-md-4">
                 <label class="form-label text-secondary fw-semibold small">Ngày kết thúc</label>
                 @(Html.DevExtreme().DateBox()
-                    .ID("surveyEndDate")
-                    .Type(DateBoxType.DateTime)
-                    .DisplayFormat("dd/MM/yyyy HH:mm")
-                    .Placeholder("Chọn ngày kết thúc")
+                .ID("surveyEndDate")
+                .Type(DateBoxType.DateTime)
+                .DisplayFormat("dd/MM/yyyy HH:mm")
+                .Placeholder("Chọn ngày kết thúc")
                 )
             </div>
             <div class="col-md-4">
                 <label class="form-label text-secondary fw-semibold small">Trạng thái hoạt động</label>
                 @(Html.DevExtreme().SelectBox()
-                    .ID("surveyStatus")
-                    .DataSource(new[] { 
-                        new { Value = (byte)1, Text = "Đang mở" }, 
-                        new { Value = (byte)0, Text = "Đã đóng" } 
-                    })
-                    .ValueExpr("Value")
-                    .DisplayExpr("Text")
-                    .Value((byte)1)
+                .ID("surveyStatus")
+                .DataSource(new[] {
+                new { Value = (byte)1, Text = "Đang mở" },
+                new { Value = (byte)0, Text = "Đã đóng" }
+                })
+                .ValueExpr("Value")
+                .DisplayExpr("Text")
+                .Value((byte)1)
                 )
             </div>
-            <div class="col-md-6 mt-3">
+            <div class="col-md-4 mt-3">
                 <label class="form-label text-secondary fw-semibold small">Phòng ban áp dụng <span class="text-danger">*</span></label>
                 @(Html.DevExtreme().SelectBox()
-                    .ID("surveyTargetDepartment")
-                    .DataSource(new[] { 
-                        new { Value = "IT", Text = "Phòng Công nghệ thông tin" }, 
-                        new { Value = "HR", Text = "Phòng Nhân sự" }, 
-                        new { Value = "Sales", Text = "Phòng Kinh doanh (Sales)" },
-                        new { Value = "All", Text = "Tất cả nhân sự công ty"}
-                    })
-                    .ValueExpr("Value")
-                    .DisplayExpr("Text")
-                    .Placeholder("Chọn phòng ban mục tiêu...")
+                .ID("surveyTargetDepartment")
+                .DataSource(new[] {
+                new { Value = "IT", Text = "Phòng Công nghệ thông tin" },
+                new { Value = "HR", Text = "Phòng Nhân sự" },
+                new { Value = "Sales", Text = "Phòng Kinh doanh (Sales)" },
+                new { Value = "All", Text = "Tất cả nhân sự công ty"}
+                })
+                .ValueExpr("Value")
+                .DisplayExpr("Text")
+                .Placeholder("Chọn phòng ban mục tiêu...")
                 )
             </div>
-            <div class="col-md-6 mt-3">
+            <div class="col-md-4 mt-3">
                 <label class="form-label text-secondary fw-semibold small">Vị trí áp dụng <span class="text-danger">*</span></label>
                 @(Html.DevExtreme().SelectBox()
-                    .ID("surveyTargetPosition")
-                    .ValueExpr("Value")
-                    .DisplayExpr("DisplayText")
-                    .Placeholder("Chọn vị trí...")
-                    .Disabled(true)
+                .ID("surveyTargetPosition")
+                .ValueExpr("Value")
+                .DisplayExpr("DisplayText")
+                .Placeholder("Chọn vị trí...")
+                .Disabled(true)
+                )
+            </div>
+            <div class="col-md-4 mt-3">
+                <label class="form-label text-secondary fw-semibold small">Giới hạn số lần khảo sát <span class="text-danger">*</span></label>
+                @(Html.DevExtreme().SelectBox()
+                .ID("surveyLimit")
+                .DataSource(new[] {
+                new { Value = 1, Text = "1 lần" },
+                new { Value = 2, Text = "2 lần" },
+                new { Value = 3, Text = "3 lần" },
+                new { Value = 0, Text = "Không giới hạn" }
+                })
+                .ValueExpr("Value")
+                .DisplayExpr("Text")
+                .Placeholder("Chọn giới hạn...")
+                .AcceptCustomValue(true)
+                .Value("1")
                 )
             </div>
         </div>
@@ -107,20 +124,20 @@
             </h5>
             <div class="d-flex gap-2">
                 @(Html.DevExtreme().Button()
-                    .Text("Nhập từ excel")
-                    .Type(ButtonType.Default)
-                    .Icon("import")
-                    .StylingMode(ButtonStylingMode.Outlined)
-                    .OnClick("window.Survey.Event.showImportPopup")
+                .Text("Nhập từ excel")
+                .Type(ButtonType.Default)
+                .Icon("import")
+                .StylingMode(ButtonStylingMode.Outlined)
+                .OnClick("window.Survey.Event.showImportPopup")
                 )
                 @(Html.DevExtreme().Button()
-                    .Text("Thêm câu hỏi mới")
-                    .Type(ButtonType.Default)
-                    .Icon("add")
-                    .OnClick("window.Survey.Element.addQuestion")
+                .Text("Thêm câu hỏi mới")
+                .Type(ButtonType.Default)
+                .Icon("add")
+                .OnClick("window.Survey.Element.addQuestion")
                 )
             </div>
-            
+
         </div>
 
         <div id="questionsContainer" class="d-flex flex-column gap-3">
@@ -134,95 +151,95 @@
 
 <div class="d-flex justify-content-end mb-5">
     @(Html.DevExtreme().Button()
-        .Text("Lưu Khảo sát")
-        .Type(ButtonType.Success)
-        .Icon("check")
-        .Width(200)
-        .Height(45)
-        .OnClick("window.Survey.Event.saveSurvey")
+    .Text("Lưu Khảo sát")
+    .Type(ButtonType.Success)
+    .Icon("check")
+    .Width(200)
+    .Height(45)
+    .OnClick("window.Survey.Event.saveSurvey")
     )
 </div>
 
 @(Html.DevExtreme().Toast()
-    .ID("toastCreator")
-    .DisplayTime(3000)
-    .Width(350)
-    .Position(p => p
-        .My(HorizontalAlignment.Right, VerticalAlignment.Top)
-        .At(HorizontalAlignment.Right, VerticalAlignment.Top)
-        .Offset(-20, 20)
-    )
+.ID("toastCreator")
+.DisplayTime(3000)
+.Width(350)
+.Position(p => p
+.My(HorizontalAlignment.Right, VerticalAlignment.Top)
+.At(HorizontalAlignment.Right, VerticalAlignment.Top)
+.Offset(-20, 20)
+)
 )
 
 @(Html.DevExtreme().Popup()
-    .ID("importExcelPopup")
-    .Title("Nhập câu hỏi từ Excel")
-    .Width(550)
-    .Height(480)
-    .Visible(false)
-    .DragEnabled(true)
-    .ContentTemplate(@<text>
-        <div class="alert alert-secondary small mb-3">
-            <strong>Hướng dẫn:</strong> Tải file mẫu, điền các câu hỏi và chọn tệp để nhập. Đối với câu hỏi trắc nghiệm (Radio/Checkbox), các đáp án viết dưới dạng <code>Mã: Tên hiển thị</code>, phân tách bằng dấu chấm phẩy (;). Ví dụ: <code>1: Rất tốt; 2: Bình thường</code>.
-        </div>
+.ID("importExcelPopup")
+.Title("Nhập câu hỏi từ Excel")
+.Width(550)
+.Height(480)
+.Visible(false)
+.DragEnabled(true)
+.ContentTemplate(@<text>
+    <div class="alert alert-secondary small mb-3">
+        <strong>Hướng dẫn:</strong> Tải file mẫu, điền các câu hỏi và chọn tệp để nhập. Đối với câu hỏi trắc nghiệm (Radio/Checkbox), các đáp án viết dưới dạng <code>Mã: Tên hiển thị</code>, phân tách bằng dấu chấm phẩy (;). Ví dụ: <code>1: Rất tốt; 2: Bình thường</code>.
+    </div>
 
-        <div class="d-flex justify-content-between align-items-center mb-3 pb-3 border-bottom">
-            <span class="small text-muted">Bước 1: Tải cấu trúc câu hỏi mẫu</span>
-            @(Html.DevExtreme().Button()
-                .Text("Tải file mẫu (.xlsx)")
-                .Type(ButtonType.Normal)
-                .StylingMode(ButtonStylingMode.Outlined)
-                .Icon("download")
-            )
-        </div>
+    <div class="d-flex justify-content-between align-items-center mb-3 pb-3 border-bottom">
+        <span class="small text-muted">Bước 1: Tải cấu trúc câu hỏi mẫu</span>
+        @(Html.DevExtreme().Button()
+        .Text("Tải file mẫu (.xlsx)")
+        .Type(ButtonType.Normal)
+        .StylingMode(ButtonStylingMode.Outlined)
+        .Icon("download")
+        )
+    </div>
 
-        <div class="mb-3">
-            <label class="form-label small fw-bold mb-1">Bước 2: Chọn tệp Excel đã điền:</label>
-            @(Html.DevExtreme().FileUploader()
-                .ID("importExcelFile")
-                .SelectButtonText("Chọn tệp Excel")
-                .LabelText("")
-                .Accept(".xlsx, .xls")
-                .UploadMode(FileUploadMode.UseForm)
-            )
-        </div>
+    <div class="mb-3">
+        <label class="form-label small fw-bold mb-1">Bước 2: Chọn tệp Excel đã điền:</label>
+        @(Html.DevExtreme().FileUploader()
+        .ID("importExcelFile")
+        .SelectButtonText("Chọn tệp Excel")
+        .LabelText("")
+        .Accept(".xlsx, .xls")
+        .UploadMode(FileUploadMode.UseForm)
+        )
+    </div>
 
-        <div class="mb-3">
-            <label class="form-label small fw-bold mb-1">Tùy chọn nhập:</label>
-            @(Html.DevExtreme().RadioGroup()
-                .ID("importMode")
-                .DataSource(new[] {
-                    new { Value = "overwrite", Text = "Ghi đè danh sách cũ" },
-                    new { Value = "append", Text = "Nối tiếp vào cuối" }
-                })
-                .ValueExpr("Value")
-                .DisplayExpr("Text")
-                .Value("overwrite")
-                .Layout(Orientation.Horizontal)
-            )
-        </div>
+    <div class="mb-3">
+        <label class="form-label small fw-bold mb-1">Tùy chọn nhập:</label>
+        @(Html.DevExtreme().RadioGroup()
+        .ID("importMode")
+        .DataSource(new[] {
+        new { Value = "overwrite", Text = "Ghi đè danh sách cũ" },
+        new { Value = "append", Text = "Nối tiếp vào cuối" }
+        })
+        .ValueExpr("Value")
+        .DisplayExpr("Text")
+        .Value("overwrite")
+        .Layout(Orientation.Horizontal)
+        )
+    </div>
 
-        <div class="d-flex justify-content-end gap-2 mt-4 pt-3 border-top">
-            @(Html.DevExtreme().Button()
-                .Text("Hủy bỏ")
-                .Type(ButtonType.Normal)
-                .StylingMode(ButtonStylingMode.Outlined)
-                .OnClick("function() { $('#importExcelPopup').dxPopup('instance').hide(); }")
-            )
-            @(Html.DevExtreme().Button()
-                .Text("Thực hiện nhập")
-                .Type(ButtonType.Default)
-                .OnClick("function() { $('#importExcelPopup').dxPopup('instance').hide(); }")
-            )
-        </div>
-    </text>)
+    <div class="d-flex justify-content-end gap-2 mt-4 pt-3 border-top">
+        @(Html.DevExtreme().Button()
+        .Text("Hủy bỏ")
+        .Type(ButtonType.Normal)
+        .StylingMode(ButtonStylingMode.Outlined)
+        .OnClick("function() { $('#importExcelPopup').dxPopup('instance').hide(); }")
+        )
+        @(Html.DevExtreme().Button()
+        .Text("Thực hiện nhập")
+        .Type(ButtonType.Default)
+        .OnClick("function() { $('#importExcelPopup').dxPopup('instance').hide(); }")
+        )
+    </div>
+</text>)
 )
 
 <script>
     window.Survey = window.Survey || {};
     window.Survey.Urls = {
-        createNested: "@Url.Action("CreateNested", "Survey")",
-        index: "@Url.Action("Index", "Survey")"
+    createNested: "@Url.Action("CreateNested", "Survey")",
+    index: "@Url.Action("Index", "Survey")"
     };
 </script>
 

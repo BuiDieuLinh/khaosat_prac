@@ -37,10 +37,9 @@ ViewData["Title"] = "Danh sách khảo sát";
 .Paging(p => p.PageSize(6))
 .SearchPanel(s => s.Visible(true).Width(300).Placeholder("Tìm kiếm khảo sát..."))
 .CardTemplate(@<text>
-                   <div class="card survey-row-card <%- card.data.Status == 1 ? 'status-active' : 'status-inactive' %> shadow-sm" style="overflow: hidden;">
+                   <div class="card survey-row-card shadow-sm" style="overflow: hidden;">
                        <div class="card-body py-3 ps-4 pe-3">
                            <div class="row align-items-center g-3">
-                               <!-- Cột 1: Mã & Trạng thái -->
                                <div class="col-md-2 d-flex flex-column gap-2 justify-content-center">
                                    <span class="text-muted small fw-bold">#<%- card.data.Code %></span>
                                    <div>
@@ -49,8 +48,6 @@ ViewData["Title"] = "Danh sách khảo sát";
                                        </span>
                                    </div>
                                </div>
-
-                               <!-- Cột 2: Tên & Mô tả -->
                                <div class="col-md-3">
                                    <h5 class="card-title text-dark fw-bold mb-1" style="font-size: 1rem; letter-spacing: -0.01em;"><%- card.data.Name %></h5>
                                    <p class="text-muted mb-0 small text-truncate" style="max-width: 100%; font-size: 0.85rem;">
@@ -58,7 +55,6 @@ ViewData["Title"] = "Danh sách khảo sát";
                                    </p>
                                </div>
 
-                               <!-- Cột 3: Ngày bắt đầu & kết thúc -->
                                <div class="col-md-3 small text-secondary" style="font-size: 0.85rem;">
                                    <div class="d-flex align-items-center mb-1">
                                        <span class="text-muted me-2" style="width: 60px;">Bắt đầu:</span>
@@ -70,9 +66,8 @@ ViewData["Title"] = "Danh sách khảo sát";
                                    </div>
                                </div>
 
-                               <!-- Cột 4: Thống kê tổng quan -->
                                <div class="col-md-2 small text-secondary border-start border-light-subtle ps-3" style="font-size: 0.85rem;">
-                                   <!-- Hàng 1 -->
+
                                    <div class="row g-1 mb-1">
                                        <div class="col-6">
                                            <span class="text-muted">Tổng:</span>
@@ -83,7 +78,6 @@ ViewData["Title"] = "Danh sách khảo sát";
                                            <span class="fw-bold text-dark ms-1"><%- card.data.CompletionRate %>%</span>
                                        </div>
                                    </div>
-                                   <!-- Hàng 2 -->
                                    <div class="row g-1">
                                        <div class="col-6">
                                            <span class="text-muted">Xong:</span>
@@ -96,7 +90,6 @@ ViewData["Title"] = "Danh sách khảo sát";
                                    </div>
                                </div>
 
-                               <!-- Cột 5: Hành động -->
                                <div class="col-md-2 text-md-end text-start d-flex flex-column gap-2 justify-content-center align-items-md-end">
                                    <a class="btn btn-primary w-100 px-3 py-2 btn-sm fw-semibold <%- card.data.Status != 1 ? 'disabled' : '' %>" href="/Survey/Detail/<%- card.data.Id %>" style="font-size: 0.85rem;">
                                        Làm khảo sát

@@ -128,16 +128,22 @@ window.Survey.Element.addQuestion = function (existingData) {
 
     const html = `
         <div class="question-block border rounded-1 p-4 bg-white position-relative mb-3 shadow-sm" id="qBlock_${qId}">
-            <button type="button" class="btn btn-outline-danger btn-sm position-absolute top-0 end-0 mt-3 me-3" onclick="window.Survey.Element.removeQuestion(${qId})">
-                <i class="dx-icon-trash"></i> Xóa
-            </button>
+            <div class="d-flex align-items-center mb-3 pb-2 border-bottom">
+                <div class="drag-handle me-3 text-muted" style="cursor: move; font-size: 1.25rem;" title="Kéo thả để sắp xếp">
+                    <i class="dx-icon-menu"></i>
+                </div>
+                <h6 class="fw-bold text-dark mb-0"><i class="dx-icon-help-outline me-1"></i> Câu hỏi #${qId}</h6>
+                <button type="button" class="btn btn-outline-danger btn-sm ms-auto px-2 py-1" onclick="window.Survey.Element.removeQuestion(${qId})" title="Xóa câu hỏi">
+                    <i class="dx-icon-trash"></i> Xóa
+                </button>
+            </div>
             
             <div class="row g-3">
-                <div class="col-md-6">
+                <div class="col-md-4">
                     <label class="form-label small">Tên trường dữ liệu (FieldName - viết liền, không dấu) <span class="text-danger">*</span></label>
                     <div id="qFieldName_${qId}"></div>
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-8">
                     <label class="form-label small">Nhãn câu hỏi hiển thị (Caption) <span class="text-danger">*</span></label>
                     <div id="qCaption_${qId}"></div>
                 </div>
@@ -146,7 +152,7 @@ window.Survey.Element.addQuestion = function (existingData) {
                     <div id="qDataType_${qId}"></div>
                 </div>
                 <div class="col-md-4">
-                    <label class="form-label small">Bắt buộc trả lời (Required)</label>
+                    <label class="form-label small">Bắt buộc trả lời (Required) <span class="text-danger">*</span></label>
                     <div id="qRequired_${qId}" class="mt-1"></div>
                 </div>
                 <div class="col-md-4">
@@ -155,10 +161,9 @@ window.Survey.Element.addQuestion = function (existingData) {
                 </div>
             </div>
 
-            <!-- Khu vực tùy chọn đáp án (chỉ hiện khi kiểu là Radio hoặc Checkbox) -->
             <div class="options-section border-top mt-3 pt-3" id="optionsSection_${qId}" style="display: none;">
                 <div class="d-flex justify-content-between align-items-center mb-2">
-                    <h6 class="fw-bold text-primary mb-0"><i class="dx-icon-bulletlist small me-1"></i> Danh sách đáp án lựa chọn</h6>
+                    <h6 class="fw-bold text-primary mb-0">Danh sách đáp án lựa chọn</h6>
                     <button type="button" class="btn btn-outline-primary btn-sm px-2 py-1" onclick="window.Survey.Element.addOption(${qId})">
                         <i class="dx-icon-add small"></i> Thêm lựa chọn
                     </button>
@@ -173,27 +178,35 @@ window.Survey.Element.addQuestion = function (existingData) {
     $("#questionsContainer").append(html);
     window.Survey.Element.toggleEmptyState();
 
+    const fieldNameVal = existingData ? (existingData.fieldName || existingData.FieldName || "") : "";
+    const captionVal = existingData ? (existingData.caption || existingData.Caption || "") : "";
+    const dataTypeVal = existingData ? (existingData.dataType || existingData.DataType || "TextBox") : "TextBox";
+    const requiredVal = existingData ? (existingData.required !== undefined ? existingData.required : existingData.Required) : undefined;
+    const helperVal = existingData ? (existingData.helper || existingData.Helper || "") : "";
+
     $(`#qFieldName_${qId}`).dxTextBox({
         placeholder: `Ví dụ: lyDoNghi, mucDoHaiLong...`,
         mode: "text",
-        value: existingData ? existingData.fieldName : ""
+        value: fieldNameVal
     });
 
     $(`#qCaption_${qId}`).dxTextBox({
         placeholder: `Ví dụ: Nhập lý do nghỉ việc, Bạn có hài lòng không?...`,
-        value: existingData ? existingData.caption : ""
+        value: captionVal
     });
 
     $(`#qDataType_${qId}`).dxSelectBox({
         items: [
-            { id: "Text", text: "Nhập chữ tự do (Text)" },
+            { id: "TextBox", text: "Nhập chữ tự do (Text)" },
             { id: "Number", text: "Nhập số (Number)" },
             { id: "Radio", text: "Chọn 1 đáp án (Radio)" },
-            { id: "Checkbox", text: "Chọn nhiều đáp án (Checkbox)" }
+            { id: "Checkbox", text: "Chọn nhiều đáp án (Checkbox)" },
+            { id: "Datetime", text: "Chọn ngày (Date)" },
+            { id: "TextArea", text: "Nhập nội dung (TextArea)"}
         ],
         valueExpr: "id",
         displayExpr: "text",
-        value: existingData ? existingData.dataType : "Text",
+        value: dataTypeVal,
         onValueChanged: function (e) {
             const section = $(`#optionsSection_${qId}`);
             if (e.value === "Radio" || e.value === "Checkbox") {
@@ -214,23 +227,49 @@ window.Survey.Element.addQuestion = function (existingData) {
         ],
         valueExpr: "value",
         displayExpr: "text",
-        value: existingData ? existingData.required : false,
+        value: requiredVal !== undefined ? requiredVal : true,
         layout: "horizontal"
     });
 
     $(`#qHelper_${qId}`).dxTextBox({
         placeholder: `Ví dụ: Vui lòng nhập chi tiết, Chọn 1 lựa chọn phù hợp nhất...`,
-        value: existingData ? existingData.helper : ""
+        value: helperVal
     });
 
-    if (existingData && (existingData.dataType === "Radio" || existingData.dataType === "Checkbox")) {
+    const dtLower = dataTypeVal.toLowerCase();
+    if (existingData && (dtLower === "radiolist" || dtLower === "checkbox" || dtLower === "radio")) {
         $(`#optionsSection_${qId}`).show();
-        if (existingData.options && existingData.options.length > 0) {
-            existingData.options.forEach(opt => {
+        const opts = existingData.options || existingData.Options;
+        if (opts && opts.length > 0) {
+            opts.forEach(opt => {
                 window.Survey.Element.addOption(qId, opt);
             });
         }
     }
+
+    $(`#optionsContainer_${qId}`).dxSortable({
+        filter: ".option-row",
+        handle: ".drag-option-handle",
+        itemOrientation: "vertical",
+        dragDirection: "vertical",
+        onReorder: function (e) {
+            const $item = $(e.itemElement);
+            const $container = $(`#optionsContainer_${qId}`);
+            const $remainingChildren = $container.children(".option-row").not($item);
+
+            if (e.toIndex === 0) {
+                if ($remainingChildren.length > 0) {
+                    $remainingChildren.first().before($item);
+                } else {
+                    $container.append($item);
+                }
+            } else if (e.toIndex >= $remainingChildren.length) {
+                $container.append($item);
+            } else {
+                $remainingChildren.eq(e.toIndex).before($item);
+            }
+        }
+    });
 };
 
 window.Survey.Element.removeQuestion = function (qId) {
@@ -243,19 +282,18 @@ window.Survey.Element.addOption = function (qId, existingOpt) {
     const optCount = container.find(".option-row").length + 1;
     const optRowId = `q_${qId}_opt_${optCount}`;
 
-    const val = existingOpt ? existingOpt.value : "";
-    const text = existingOpt ? existingOpt.displayText : "";
+    const text = existingOpt ? (existingOpt.displayText || existingOpt.DisplayText || "") : "";
 
     const html = `
-        <div class="option-row row g-2 align-items-center" id="${optRowId}">
-            <div class="col-md-5">
-                <input type="text" class="form-control form-control-sm opt-val" value="${val}" placeholder="Giá trị (Value) ví dụ: A, B, OK...">
+        <div class="option-row row g-2 align-items-center mb-2" id="${optRowId}">
+            <div class="col-auto drag-option-handle text-muted cursor-move" style="cursor: move; font-size: 1.1rem;" title="Kéo thả để sắp xếp đáp án">
+                <i class="dx-icon-menu"></i>
             </div>
-            <div class="col-md-5">
-                <input type="text" class="form-control form-control-sm opt-text" value="${text}" placeholder="Nhãn hiển thị (DisplayText) ví dụ: Hài lòng...">
+            <div class="col">
+                <input type="text" class="form-control form-control-sm opt-text" value="${text}" placeholder="Nhập nội dung đáp án (ví dụ: Hài lòng, Rất tốt...)">
             </div>
-            <div class="col-md-2">
-                <button type="button" class="btn btn-outline-danger btn-sm w-100" onclick="window.Survey.Element.removeOption('${optRowId}')">
+            <div class="col-auto">
+                <button type="button" class="btn btn-outline-danger btn-xs  px-2 py-1" onclick="window.Survey.Element.removeOption('${optRowId}')" title="Xóa đáp án">
                     <i class="dx-icon-trash"></i>
                 </button>
             </div>
@@ -309,10 +347,10 @@ window.Survey.Element.gatherSurveyData = function () {
             }
 
             optRows.each(function (optIdx) {
-                const val = $(this).find(".opt-val").val();
                 const text = $(this).find(".opt-text").val();
+                const val = text;
 
-                if (!val || !text) {
+                if (!text) {
                     window.Survey.Utils.showToast(`Đáp án thứ ${optIdx + 1} của câu hỏi "${caption}" không được để trống!`, "error");
                     hasError = true;
                     return false;
@@ -355,6 +393,8 @@ window.Survey.Element.gatherDetailAnswers = function (surveyElements) {
         const radioInstance = elDom.data("dxRadioGroup");
         const textInstance = elDom.data("dxTextBox");
         const numberInstance = elDom.data("dxNumberBox");
+        const dateInstance = elDom.data("dxDateBox");
+        const textAreaInstance = elDom.data("dxTextArea");
 
         if (el.hasOptions) {
             if (el.isMultiSelect) {
@@ -371,6 +411,13 @@ window.Survey.Element.gatherDetailAnswers = function (surveyElements) {
                 value = textInstance.option("value");
             } else if (numberInstance) {
                 value = numberInstance.option("value");
+            } else if (dateInstance) {
+                value = dateInstance.option("value");
+                if (value instanceof Date) {
+                    value = window.Survey.Utils.toLocalISOString(value);
+                }
+            } else if (textAreaInstance) {
+                value = textAreaInstance.option("value");
             }
         }
 
@@ -397,9 +444,6 @@ window.Survey.Element.gatherDetailAnswers = function (surveyElements) {
     return answers;
 };
 
-// ==========================================
-// 4. API (survey-api.js)
-// ==========================================
 window.Survey.Api.submitSurveyPayload = function (payload) {
     const isEdit = !!window.Survey.Urls.saveSurvey;
     $.ajax({
@@ -523,6 +567,30 @@ window.Survey.Event.showImportPopup = function () {
 $(document).ready(function () {
     if ($("#questionsContainer").length > 0) {
         window.Survey.Element.toggleEmptyState();
+
+        $("#questionsContainer").dxSortable({
+            filter: ".question-block",
+            handle: ".drag-handle",
+            itemOrientation: "vertical",
+            dragDirection: "vertical",
+            onReorder: function (e) {
+                const $item = $(e.itemElement);
+                const $container = $("#questionsContainer");
+                const $remainingChildren = $container.children(".question-block").not($item);
+
+                if (e.toIndex === 0) {
+                    if ($remainingChildren.length > 0) {
+                        $remainingChildren.first().before($item);
+                    } else {
+                        $container.append($item);
+                    }
+                } else if (e.toIndex >= $remainingChildren.length) {
+                    $container.append($item);
+                } else {
+                    $remainingChildren.eq(e.toIndex).before($item);
+                }
+            }
+        });
     }
 
     if ($("#surveyTargetDepartment").length > 0 && $("#surveyTargetPosition").length > 0) {
