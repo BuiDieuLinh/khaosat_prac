@@ -130,6 +130,11 @@ h6 {
   box-shadow: 0 0 0 2px rgba(30, 64, 175, 0.2) !important;
 }
 
+.btn-secondary {
+    background-color: var(--text-secondary);
+    border-color: var(--primary-color) !important;
+}
+
 .btn-outline-primary {
   color: var(--primary-color) !important;
   border-color: var(--primary-color) !important;
@@ -340,7 +345,7 @@ footer a:hover {
 }
 
 .survey-row-card:hover {
-    background: var(--card-bg-hover);
+  background: var(--card-bg-hover);
 }
 
 /* Custom Form Controls Overrides for Corporate Styling */
@@ -371,8 +376,8 @@ footer a:hover {
 .dx-invalid .dx-texteditor-container,
 .dx-invalid.dx-state-hover,
 .dx-invalid.dx-state-focused {
-    border-color: #ef4444 !important;
-    box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.15) !important;
+  border-color: #ef4444 !important;
+  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.15) !important;
 }
 
 .question-block {
@@ -396,7 +401,12 @@ footer a:hover {
 .question-block .dx-list {
   border: none !important;
 }
+
 .question-block .dx-list-item {
   border-top: none !important;
   border-bottom: none !important;
 }
+
+.survey-btn-pill {
+  border-radius: 5rem !important;
+} 

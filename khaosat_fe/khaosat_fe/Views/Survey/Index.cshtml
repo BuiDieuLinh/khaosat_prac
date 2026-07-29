@@ -1,5 +1,5 @@
 @{
-ViewData["Title"] = "Danh sách khảo sát";
+    ViewData["Title"] = "Danh sách khảo sát";
 }
 
 @if (TempData["ErrorMessage"] != null)
@@ -37,71 +37,45 @@ ViewData["Title"] = "Danh sách khảo sát";
 .Paging(p => p.PageSize(6))
 .SearchPanel(s => s.Visible(true).Width(300).Placeholder("Tìm kiếm khảo sát..."))
 .CardTemplate(@<text>
-                   <div class="card survey-row-card shadow-sm" style="overflow: hidden;">
-                       <div class="card-body py-3 ps-4 pe-3">
-                           <div class="row align-items-center g-3">
-                               <div class="col-md-2 d-flex flex-column gap-2 justify-content-center">
-                                   <span class="text-muted small fw-bold">#<%- card.data.Code %></span>
-                                   <div>
-                                       <span class="badge <%- card.data.Status == 1 ? 'bg-success-subtle text-success border border-success-subtle' : 'bg-secondary-subtle text-secondary border border-secondary-subtle' %> px-2 py-1">
-                                           <%- card.data.Status == 1 ? 'Đang mở' : 'Đã đóng' %>
-                                       </span>
-                                   </div>
-                               </div>
-                               <div class="col-md-3">
-                                   <h5 class="card-title text-dark fw-bold mb-1" style="font-size: 1rem; letter-spacing: -0.01em;"><%- card.data.Name %></h5>
-                                   <p class="text-muted mb-0 small text-truncate" style="max-width: 100%; font-size: 0.85rem;">
-                                       <%- card.data.Description || "Không có mô tả cho khảo sát này." %>
-                                   </p>
-                               </div>
+<div class="card survey-row-card shadow-sm" style="overflow: hidden;">
+    <div class="card-body py-3 ps-4 pe-3">
+        <div class="d-flex flex-row align-items-center justify-content-between flex-nowrap gap-3">
+            <!-- Nhóm bên trái: Tên + Mã + Badge + Stats -->
+            <div class="d-flex flex-column gap-1" style="min-width: 0; flex: 1;">
+                <div class="d-flex flex-row align-items-center gap-2 flex-wrap">
+                    <h5 class="card-title text-dark fw-bold mb-0" style="font-size: 1rem; letter-spacing: -0.01em; white-space: nowrap;"><%- card.data.Name %></h5>
+                    <span class="text-muted small" style="font-size: 0.85rem;">#<%- card.data.Code %></span>
+                    <span class="badge <%- card.data.Status == 1 ? 'bg-success-subtle text-success border border-success-subtle' : 'bg-secondary-subtle text-secondary border border-secondary-subtle' %> px-2 py-1 rounded-pill">
+                        <%- card.data.Status == 1 ? 'Đang mở' : 'Đã đóng' %>
+                    </span>
+                </div>
+                <div class="d-flex flex-row gap-3">
+                    <span class="text-muted small" style="font-size: 0.85rem;">
+                        <i class="dx-icon-chart"></i> <%- card.data.CompletedCount %> / <%- card.data.TotalResponses %> responses
+                    </span>
+                    <span class="text-muted small" style="font-size: 0.85rem;">
+                        <i class="dx-icon-clock"></i> <%- card.data.StartDate ? DevExpress.localization.formatDate(new Date(card.data.StartDate), "dd/MM/yyyy HH:mm") : "N/A" %>
+                    </span>
+                </div>
+            </div>
 
-                               <div class="col-md-3 small text-secondary" style="font-size: 0.85rem;">
-                                   <div class="d-flex align-items-center mb-1">
-                                       <span class="text-muted me-2" style="width: 60px;">Bắt đầu:</span>
-                                       <span class="fw-semibold text-dark"><%- card.data.StartDate ? DevExpress.localization.formatDate(new Date(card.data.StartDate), "dd/MM/yyyy HH:mm") : "N/A" %></span>
-                                   </div>
-                                   <div class="d-flex align-items-center">
-                                       <span class="text-muted me-2" style="width: 60px;">Kết thúc:</span>
-                                       <span class="fw-semibold text-dark"><%- card.data.EndDate ? DevExpress.localization.formatDate(new Date(card.data.EndDate), "dd/MM/yyyy HH:mm") : "N/A" %></span>
-                                   </div>
-                               </div>
-
-                               <div class="col-md-2 small text-secondary border-start border-light-subtle ps-3" style="font-size: 0.85rem;">
-
-                                   <div class="row g-1 mb-1">
-                                       <div class="col-6">
-                                           <span class="text-muted">Tổng:</span>
-                                           <span class="fw-bold text-dark ms-1"><%- card.data.TotalResponses %></span>
-                                       </div>
-                                       <div class="col-6 text-end">
-                                           <span class="text-muted">Tỷ lệ:</span>
-                                           <span class="fw-bold text-dark ms-1"><%- card.data.CompletionRate %>%</span>
-                                       </div>
-                                   </div>
-                                   <div class="row g-1">
-                                       <div class="col-6">
-                                           <span class="text-muted">Xong:</span>
-                                           <span class="fw-bold text-dark ms-1"><%- card.data.CompletedCount %></span>
-                                       </div>
-                                       <div class="col-6 text-end">
-                                           <span class="text-muted">Chưa:</span>
-                                           <span class="fw-bold text-dark ms-1"><%- card.data.IncompleteCount %></span>
-                                       </div>
-                                   </div>
-                               </div>
-
-                               <div class="col-md-2 text-md-end text-start d-flex flex-column gap-2 justify-content-center align-items-md-end">
-                                   <a class="btn btn-primary w-100 px-3 py-2 btn-sm fw-semibold <%- card.data.Status != 1 ? 'disabled' : '' %>" href="/Survey/Detail/<%- card.data.Id %>" style="font-size: 0.85rem;">
-                                       Làm khảo sát
-                                   </a>
-                                   <% if (!card.data.StartDate || new Date(card.data.StartDate) > new Date()) { %>
-                                       <a class="btn btn-outline-secondary w-100 px-3 py-2 btn-sm fw-semibold" href="/Survey/Edit/<%- card.data.Id %>" style="font-size: 0.85rem;">
-                                           <i class="dx-icon-edit small me-1"></i> Sửa
-                                       </a>
-                                   <% } %>
-                               </div>
-                           </div>
-                       </div>
-                   </div>
- </text>)
+            <!-- Nhóm bên phải: Completion Rate + Buttons -->
+            <div class="d-flex flex-row align-items-center gap-3" style="flex-shrink: 0;">
+                <div class="d-flex flex-column justify-content-center align-items-center">
+                    <p class="text-dark mb-0 fs-4"><%- card.data.CompletionRate %>%</p>
+                    <p class="text-muted mb-0 small" style="font-size: 0.8rem;">completion</p>
+                </div>
+                <div class="d-flex flex-row gap-2 justify-content-center align-items-center">
+                    <a class="btn btn-outline-primary px-3 py-2 btn-sm fw-semibold survey-btn-pill <%- card.data.Status != 1 ? 'disabled' : '' %>" href="/Survey/Detail/<%- card.data.Id %>" style="font-size: 0.85rem;">
+                        <i class="dx-icon-eyeopen"></i> Làm khảo sát
+                    </a>
+                    <a class="btn btn-outline-secondary px-2 py-2 btn-sm survey-btn-pill <%- card.data.StartDate && new Date(card.data.StartDate) <= new Date() ? 'disabled' : '' %>" href="/Survey/Edit/<%- card.data.Id %>" title="Sửa">
+                        <i class="dx-icon-edit"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</text>)
  )
