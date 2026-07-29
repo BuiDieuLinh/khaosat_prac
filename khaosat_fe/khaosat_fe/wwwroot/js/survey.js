@@ -127,9 +127,9 @@ window.Survey.Element.addQuestion = function (existingData) {
     const qId = window.Survey.Element.questionCounter;
 
     const html = `
-        <div class="question-block border rounded-1 p-4 bg-white position-relative mb-3 shadow-sm" id="qBlock_${qId}">
-            <div class="d-flex align-items-center mb-3 pb-2 border-bottom">
-                <div class="drag-handle me-3 text-muted" style="cursor: move; font-size: 1.25rem;" title="Kéo thả để sắp xếp">
+        <div class="question-block builder-question-card border rounded-1 p-4 bg-white position-relative mb-3 shadow-sm" id="qBlock_${qId}">
+            <div class="builder-question-header d-flex align-items-center mb-3 pb-3 border-bottom">
+                <div class="drag-handle builder-drag-handle me-3 text-muted" style="cursor: move; font-size: 1.25rem;" title="Kéo thả để sắp xếp">
                     <i class="dx-icon-menu"></i>
                 </div>
                 <h6 class="fw-bold text-dark mb-0"><i class="dx-icon-help-outline me-1"></i> Câu hỏi #${qId}</h6>
@@ -140,7 +140,7 @@ window.Survey.Element.addQuestion = function (existingData) {
             
             <div class="row g-3">
                 <div class="col-md-4">
-                    <label class="form-label small">Tên trường dữ liệu (FieldName - viết liền, không dấu) <span class="text-danger">*</span></label>
+                    <label class="form-label small">Tên trường dữ liệu (FieldName - viết liền, không dấu)<span class="text-danger">*</span></label>
                     <div id="qFieldName_${qId}"></div>
                 </div>
                 <div class="col-md-8">
@@ -161,7 +161,7 @@ window.Survey.Element.addQuestion = function (existingData) {
                 </div>
             </div>
 
-            <div class="options-section border-top mt-3 pt-3" id="optionsSection_${qId}" style="display: none;">
+            <div class="options-section builder-options-section border-top mt-3 pt-3" id="optionsSection_${qId}" style="display: none;">
                 <div class="d-flex justify-content-between align-items-center mb-2">
                     <h6 class="fw-bold text-primary mb-0">Danh sách đáp án lựa chọn</h6>
                     <button type="button" class="btn btn-outline-primary btn-sm px-2 py-1" onclick="window.Survey.Element.addOption(${qId})">
@@ -285,7 +285,7 @@ window.Survey.Element.addOption = function (qId, existingOpt) {
     const text = existingOpt ? (existingOpt.displayText || existingOpt.DisplayText || "") : "";
 
     const html = `
-        <div class="option-row row g-2 align-items-center mb-2" id="${optRowId}">
+        <div class="option-row builder-option-row row g-2 align-items-center mb-2" id="${optRowId}">
             <div class="col-auto drag-option-handle text-muted cursor-move" style="cursor: move; font-size: 1.1rem;" title="Kéo thả để sắp xếp đáp án">
                 <i class="dx-icon-menu"></i>
             </div>

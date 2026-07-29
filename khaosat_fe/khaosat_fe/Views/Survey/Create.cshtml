@@ -2,7 +2,8 @@
 ViewData["Title"] = "Tạo khảo sát mới";
 }
 
-<div class="mb-4">
+<div class="survey-builder">
+<div class="builder-page-header mb-4">
     <a href="@Url.Action("Index", "Survey")" class="btn btn-outline-secondary mb-3">
         <i class="dx-icon-arrowleft"></i> Quay lại danh sách
     </a>
@@ -10,29 +11,35 @@ ViewData["Title"] = "Tạo khảo sát mới";
     <p class="text-muted mb-0">Thiết kế thông tin khảo sát và các tiêu chí câu hỏi động bên dưới.</p>
 </div>
 
-<div class="card shadow-sm mb-4">
+<div class="card builder-section mb-4">
     <div class="card-body p-4">
-        <h5 class="card-title fw-bold mb-4">
-            1. Thông tin chung khảo sát
-        </h5>
+        <div class="builder-section-heading">
+            <span class="builder-step">01</span>
+            <div>
+                <h5 class="card-title fw-bold mb-1">
+                    Thông tin chung khảo sát
+                </h5>
+                <p class="builder-section-description mb-0">Xác định phạm vi, thời gian và trạng thái phát hành của khảo sát.</p>
+            </div>
+        </div>
 
         <div class="row g-3">
             <div class="col-md-4">
-                <label class="form-label text-secondary fw-semibold small">Mã khảo sát <span class="text-danger">*</span></label>
+                <label class="form-label text-secondary   small">Mã khảo sát <span class="text-danger">*</span></label>
                 @(Html.DevExtreme().TextBox()
                 .ID("surveyCode")
                 .Placeholder("Ví dụ: KS_NV_2026")
                 )
             </div>
             <div class="col-md-8">
-                <label class="form-label text-secondary fw-semibold small">Tên khảo sát <span class="text-danger">*</span></label>
+                <label class="form-label text-secondary small">Tên khảo sát <span class="text-danger">*</span></label>
                 @(Html.DevExtreme().TextBox()
                 .ID("surveyName")
                 .Placeholder("Nhập tiêu đề cuộc khảo sát...")
                 )
             </div>
             <div class="col-12">
-                <label class="form-label text-secondary fw-semibold small">Mô tả khảo sát</label>
+                <label class="form-label text-secondary small">Mô tả khảo sát</label>
                 @(Html.DevExtreme().TextArea()
                 .ID("surveyDescription")
                 .Placeholder("Mô tả tóm tắt mục đích cuộc khảo sát...")
@@ -40,7 +47,7 @@ ViewData["Title"] = "Tạo khảo sát mới";
                 )
             </div>
             <div class="col-md-4">
-                <label class="form-label text-secondary fw-semibold small">Ngày bắt đầu <span class="text-danger">*</span></label>
+                <label class="form-label text-secondary small">Ngày bắt đầu <span class="text-danger">*</span></label>
                 @(Html.DevExtreme().DateBox()
                 .ID("surveyStartDate")
                 .Type(DateBoxType.DateTime)
@@ -49,7 +56,7 @@ ViewData["Title"] = "Tạo khảo sát mới";
                 .Value(DateTime.Now))
             </div>
             <div class="col-md-4">
-                <label class="form-label text-secondary fw-semibold small">Ngày kết thúc</label>
+                <label class="form-label text-secondary small">Ngày kết thúc</label>
                 @(Html.DevExtreme().DateBox()
                 .ID("surveyEndDate")
                 .Type(DateBoxType.DateTime)
@@ -58,7 +65,7 @@ ViewData["Title"] = "Tạo khảo sát mới";
                 )
             </div>
             <div class="col-md-4">
-                <label class="form-label text-secondary fw-semibold small">Trạng thái hoạt động</label>
+                <label class="form-label text-secondary small">Trạng thái hoạt động</label>
                 @(Html.DevExtreme().SelectBox()
                 .ID("surveyStatus")
                 .DataSource(new[] {
@@ -71,7 +78,7 @@ ViewData["Title"] = "Tạo khảo sát mới";
                 )
             </div>
             <div class="col-md-4 mt-3">
-                <label class="form-label text-secondary fw-semibold small">Phòng ban áp dụng <span class="text-danger">*</span></label>
+                <label class="form-label text-secondary small">Phòng ban áp dụng <span class="text-danger">*</span></label>
                 @(Html.DevExtreme().SelectBox()
                 .ID("surveyTargetDepartment")
                 .DataSource(new[] {
@@ -86,7 +93,7 @@ ViewData["Title"] = "Tạo khảo sát mới";
                 )
             </div>
             <div class="col-md-4 mt-3">
-                <label class="form-label text-secondary fw-semibold small">Vị trí áp dụng <span class="text-danger">*</span></label>
+                <label class="form-label text-secondary small">Vị trí áp dụng <span class="text-danger">*</span></label>
                 @(Html.DevExtreme().SelectBox()
                 .ID("surveyTargetPosition")
                 .ValueExpr("Value")
@@ -96,7 +103,7 @@ ViewData["Title"] = "Tạo khảo sát mới";
                 )
             </div>
             <div class="col-md-4 mt-3">
-                <label class="form-label text-secondary fw-semibold small">Giới hạn số lần khảo sát <span class="text-danger">*</span></label>
+                <label class="form-label text-secondary small">Giới hạn số lần khảo sát <span class="text-danger">*</span></label>
                 @(Html.DevExtreme().SelectBox()
                 .ID("surveyLimit")
                 .DataSource(new[] {
@@ -116,12 +123,18 @@ ViewData["Title"] = "Tạo khảo sát mới";
     </div>
 </div>
 
-<div class="card shadow-sm mb-4">
+<div class="card builder-section mb-4">
     <div class="card-body p-4">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h5 class="card-title fw-bold mb-0">
-                2. Thiết lập tiêu chí câu hỏi
-            </h5>
+        <div class="builder-section-toolbar d-flex justify-content-between align-items-center mb-4">
+            <div class="builder-section-heading mb-0">
+                <span class="builder-step">02</span>
+                <div>
+                    <h5 class="card-title fw-bold mb-1">
+                        Thiết lập tiêu chí câu hỏi
+                    </h5>
+                    <p class="builder-section-description mb-0">Thêm, sắp xếp và cấu hình câu hỏi cho người tham gia.</p>
+                </div>
+            </div>
             <div class="d-flex gap-2">
                 @(Html.DevExtreme().Button()
                 .Text("Nhập từ excel")
@@ -134,6 +147,7 @@ ViewData["Title"] = "Tạo khảo sát mới";
                 .Text("Thêm câu hỏi mới")
                 .Type(ButtonType.Default)
                 .Icon("add")
+                .StylingMode(ButtonStylingMode.Outlined)
                 .OnClick("window.Survey.Element.addQuestion")
                 )
             </div>
@@ -149,13 +163,24 @@ ViewData["Title"] = "Tạo khảo sát mới";
     </div>
 </div>
 
-<div class="d-flex justify-content-end mb-5">
+<div class="builder-action-bar d-flex justify-content-end mb-5 gap-3">
+    @(Html.DevExtreme().Button()
+    .Text("Lưu tạm")
+    .Type(ButtonType.Default)
+    .Icon("save")
+    .Width(200)
+    .Height(45)
+    .StylingMode(ButtonStylingMode.Outlined)
+    .OnClick("window.Survey.Event.saveSurvey")
+    )
+
     @(Html.DevExtreme().Button()
     .Text("Lưu Khảo sát")
-    .Type(ButtonType.Success)
+    .Type(ButtonType.Default)
     .Icon("check")
     .Width(200)
     .Height(45)
+    .StylingMode(ButtonStylingMode.Contained)
     .OnClick("window.Survey.Event.saveSurvey")
     )
 </div>
