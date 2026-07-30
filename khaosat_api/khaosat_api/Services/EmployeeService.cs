@@ -1,5 +1,6 @@
 using khaosat_api.DTOs;
 using khaosat_api.Models;
+using khaosat_api.Repositories;
 using khaosat_api.Repositories.Interfaces;
 using khaosat_api.Services.Interfaces;
 using Microsoft.IdentityModel.Tokens;
@@ -98,6 +99,83 @@ namespace khaosat_api.Services
                 signingCredentials: credentials);
 
             return new JwtSecurityTokenHandler().WriteToken(token);
+        }
+
+        public List<EmployeeResponseDto> GetAll()
+        {
+            var employees = _repository.GetAll();
+            return employees.Select(e => new EmployeeResponseDto
+            {
+                Id = e.Id,
+                EmployeeCode = e.EmployeeCode,
+                FullName = e.FullName,
+                Email = e.Email,
+                IsActive = e.IsActive,
+                CreatedDate = e.CreatedDate,
+
+                PositionId = e.PositionId,
+                PositionName = e.PositionName,
+                PositionCode = e.PositionCode,
+
+                DepartmentId = e.DepartmentId,
+                DepartmentName = e.DepartmentName,
+                DepartmentCode = e.DepartmentCode,
+
+                Roles = e.Roles ?? new List<Role>(),
+                RoleIds = e.RoleIds ?? new List<Guid>()
+            }).ToList();
+        }
+
+        public List<Department> GetDepartment()
+        {
+            return _repository.GetDepartment();
+        } 
+        
+        public List<Position> GetPosition(Guid departmentId)
+        {
+            return _repository.GetPosition(departmentId);
+        }
+
+        public List<Role> GetRoles()
+        {
+            return _repository.GetRoles();
+        }
+
+        public void Create(EmployeeCreateDto dto)
+        {
+            var employee = new Employee
+            {
+                Id = Guid.NewGuid(),
+                EmployeeCode = dto.EmployeeCode,
+                FullName = dto.FullName,
+                Email = dto.Email,
+                PasswordHash = PasswordHasher.Hash(dto.Password ?? "123456"),
+                IsActive = dto.IsActive,
+                PositionId = dto.PositionId,
+                CreatedDate = DateTime.Now
+            };
+
+            _repository.Create(employee, dto.RoleIds);
+        }
+
+        public void Update(Guid id, EmployeeUpdateDto dto)
+        {
+            var employee = new Employee
+            {
+                Id = id,
+                EmployeeCode = dto.EmployeeCode,
+                FullName = dto.FullName,
+                Email = dto.Email,
+                IsActive = dto.IsActive,
+                PositionId = dto.PositionId
+            };
+
+            _repository.Update(employee, dto.RoleIds);
+        }
+
+        public void Delete(Guid id)
+        {
+            _repository.Delete(id);
         }
     }
 }

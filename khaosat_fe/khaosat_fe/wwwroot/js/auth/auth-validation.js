@@ -1,0 +1,17 @@
+(function (window) {
+    "use strict";
+
+    const Survey = window.Survey = window.Survey || {};
+    const Auth = Survey.Auth = Survey.Auth || {};
+
+    Auth.Validation = {
+        validateCredentials(credentials) {
+            if (credentials.username && credentials.password) {
+                return true;
+            }
+
+            Survey.Utils.showToast(Auth.Constants.message.missingCredentials, "error", "loginToast");
+            return false;
+        }
+    };
+})(window);

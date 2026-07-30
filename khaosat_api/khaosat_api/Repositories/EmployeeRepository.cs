@@ -99,6 +99,16 @@ namespace khaosat_api.Repositories
             return Convert.ToInt32(cmd.ExecuteScalar());
         }
 
+        private static bool HasColumn(SqlDataReader reader, string columnName)
+        {
+            for (int i = 0; i < reader.FieldCount; i++)
+            {
+                if (reader.GetName(i).Equals(columnName, StringComparison.OrdinalIgnoreCase))
+                    return true;
+            }
+            return false;
+        }
+
         private static Employee MapFromReader(SqlDataReader reader)
         {
             return new Employee
@@ -111,6 +121,302 @@ namespace khaosat_api.Repositories
                 IsActive = Convert.ToBoolean(reader["IsActive"]),
                 CreatedDate = Convert.ToDateTime(reader["CreatedDate"])
             };
+        }
+
+        public List<EmployeeResponse> GetAll()
+        {
+            var list = new List<EmployeeResponse>();
+            using var conn = _factory.Create();
+            conn.Open();
+            const string sql = @"
+               SELECT
+                        e.Id,
+                        e.EmployeeCode,
+                        e.FullName,
+                        e.Email,
+                        e.IsActive,
+                        e.CreatedDate,
+
+                        p.Id AS PositionId,
+                        p.PositionName,
+                        p.PositionCode,
+
+                        d.Id AS DepartmentId,
+                        d.DepartmentName,
+                        d.DepartmentCode,
+
+                        r.Id AS RoleId,
+                        r.RoleName
+                    FROM Employee e
+                    LEFT JOIN Position p
+                        ON e.PositionId = p.Id
+                    LEFT JOIN Department d
+                        ON p.DepartmentId = d.Id
+                    LEFT JOIN UserRole er
+                        ON e.Id = er.EmployeeId
+                    LEFT JOIN Role r
+                        ON er.RoleId = r.Id";
+            using var cmd = new SqlCommand(sql, conn);
+            using var reader = cmd.ExecuteReader();
+            var employees = new Dictionary<Guid, EmployeeResponse>();
+
+            while (reader.Read())
+            {
+                var employeeId = (Guid)reader["Id"];
+
+                if (!employees.TryGetValue(employeeId, out var employee))
+                {
+                    employee = new EmployeeResponse
+                    {
+                        Id = employeeId,
+                        EmployeeCode = reader["EmployeeCode"].ToString()!,
+                        FullName = reader["FullName"].ToString()!,
+                        Email = reader["Email"].ToString()!,
+                        IsActive = Convert.ToBoolean(reader["IsActive"]),
+                        CreatedDate = Convert.ToDateTime(reader["CreatedDate"]),
+
+                        PositionId = reader["PositionId"] != DBNull.Value
+                            ? (Guid)reader["PositionId"]
+                            : Guid.Empty,
+
+                        PositionCode = reader["PositionCode"]?.ToString() ?? "",
+
+                        PositionName = reader["PositionName"]?.ToString() ?? "",
+
+                        DepartmentId = reader["DepartmentId"] != DBNull.Value
+                            ? (Guid)reader["DepartmentId"]
+                            : null,
+
+                        DepartmentCode = reader["DepartmentCode"]?.ToString() ?? "",
+
+                        DepartmentName = reader["DepartmentName"]?.ToString() ?? "",
+
+                        Roles = new List<Role>()
+                    };
+
+                    employees.Add(employeeId, employee);
+                }
+
+                if (reader["RoleId"] != DBNull.Value)
+                {
+                    employee.Roles.Add(new Role
+                    {
+                        Id = (Guid)reader["RoleId"],
+                        RoleName = reader["RoleName"].ToString()!
+                    });
+                }
+                
+            }
+
+            return employees.Values.ToList();
+        }
+
+        public List<Department> GetDepartment()
+        {
+            var list = new List<Department>();
+            using var conn = _factory.Create();
+            conn.Open();
+            try
+            {
+                const string sql = "SELECT * FROM Department";
+                using var cmd = new SqlCommand(sql, conn);
+                using var reader = cmd.ExecuteReader();
+                while (reader.Read())
+                {
+                    list.Add(new Department
+                    {
+                        Id = HasColumn(reader, "Id") ? Guid.Parse(reader["Id"].ToString()!) : (HasColumn(reader, "DepartmentId") ? Guid.Parse(reader["DepartmentId"].ToString()!) : Guid.NewGuid()),
+                        DepartmentName = HasColumn(reader, "DepartmentName") ? reader["DepartmentName"].ToString()! : (HasColumn(reader, "Name") ? reader["Name"].ToString()! : ""),
+                        DepartmentCode = HasColumn(reader, "DepartmentCode") ? reader["DepartmentCode"].ToString()! : (HasColumn(reader, "Code") ? reader["Code"].ToString()! : ""),
+                        Description = HasColumn(reader, "Description") ? reader["Description"].ToString()! : ""
+                    });
+                }
+            }
+            catch
+            {
+            }
+            return list;
+        }
+
+        public List<Position> GetPosition(Guid departmentId)
+        {
+            var list = new List<Position>();
+            using var conn = _factory.Create();
+            conn.Open();
+            try
+            {
+                const string sql = "SELECT * FROM Position WHERE DepartmentId = @DepartmentId OR @DepartmentId = '00000000-0000-0000-0000-000000000000'";
+                using var cmd = new SqlCommand(sql, conn);
+                cmd.Parameters.AddWithValue("@DepartmentId", departmentId);     
+                using var reader = cmd.ExecuteReader();
+                while (reader.Read())
+                {
+                    list.Add(new Position
+                    {
+                        Id = HasColumn(reader, "Id") ? Guid.Parse(reader["Id"].ToString()!) : (HasColumn(reader, "PositionId") ? Guid.Parse(reader["PositionId"].ToString()!) : Guid.NewGuid()),
+                        PositionName = HasColumn(reader, "PositionName") ? reader["PositionName"].ToString()! : (HasColumn(reader, "Name") ? reader["Name"].ToString()! : ""),
+                        PositionCode = HasColumn(reader, "PositionCode") ? reader["PositionCode"].ToString()! : (HasColumn(reader, "Code") ? reader["Code"].ToString()! : ""),
+                        Description = HasColumn(reader, "Description") ? reader["Description"].ToString()! : "",
+                        DepartmentId = HasColumn(reader, "DepartmentId") && reader["DepartmentId"] != DBNull.Value ? Guid.Parse(reader["DepartmentId"].ToString()!) : Guid.Empty
+                    });
+                }
+            }
+            catch
+            {
+            }
+            return list;
+        }
+
+        public List<Role> GetRoles()
+        {
+            var list = new List<Role>();
+            using var conn = _factory.Create();
+            conn.Open();
+            try
+            {
+                const string sql = "SELECT * FROM Role";
+                using var cmd = new SqlCommand(sql, conn);
+                using var reader = cmd.ExecuteReader();
+                while (reader.Read())
+                {
+                    list.Add(new Role
+                    {
+                        Id = HasColumn(reader, "Id") ? Guid.Parse(reader["Id"].ToString()!) : (HasColumn(reader, "RoleId") ? Guid.Parse(reader["RoleId"].ToString()!) : Guid.NewGuid()),
+                        RoleName = HasColumn(reader, "RoleName") ? reader["RoleName"].ToString()! : (HasColumn(reader, "Name") ? reader["Name"].ToString()! : "")
+                    });
+                }
+            }
+            catch
+            {
+            }
+            return list;
+        }
+
+        public void Create(Employee employee, List<Guid> roleIds)
+        {
+            using var conn = _factory.Create();
+            conn.Open();
+            using var tran = conn.BeginTransaction();
+            try
+            {
+                const string sqlEmp = @"
+                    INSERT INTO Employee (Id, EmployeeCode, FullName, Email, PasswordHash, IsActive, PositionId, CreatedDate)
+                    VALUES (@Id, @EmployeeCode, @FullName, @Email, @PasswordHash, @IsActive, @PositionId, @CreatedDate)";
+
+                using (var cmd = new SqlCommand(sqlEmp, conn, tran))
+                {
+                    cmd.Parameters.AddWithValue("@Id", employee.Id == Guid.Empty ? Guid.NewGuid() : employee.Id);
+                    cmd.Parameters.AddWithValue("@EmployeeCode", employee.EmployeeCode ?? "");
+                    cmd.Parameters.AddWithValue("@FullName", employee.FullName ?? "");
+                    cmd.Parameters.AddWithValue("@Email", employee.Email ?? "");
+                    cmd.Parameters.AddWithValue("@PasswordHash", employee.PasswordHash ?? "");
+                    cmd.Parameters.AddWithValue("@IsActive", employee.IsActive);
+                    cmd.Parameters.AddWithValue("@PositionId", (object?)employee.PositionId ?? DBNull.Value);
+                    cmd.Parameters.AddWithValue("@CreatedDate", employee.CreatedDate == default ? DateTime.Now : employee.CreatedDate);
+                    cmd.ExecuteNonQuery();
+                }
+
+                if (roleIds != null && roleIds.Count > 0)
+                {
+                    foreach (var roleId in roleIds)
+                    {
+                        const string sqlRole = "INSERT INTO UserRole (EmployeeId, RoleId) VALUES (@EmployeeId, @RoleId)";
+                        using var cmdRole = new SqlCommand(sqlRole, conn, tran);
+                        cmdRole.Parameters.AddWithValue("@EmployeeId", employee.Id);
+                        cmdRole.Parameters.AddWithValue("@RoleId", roleId);
+                        cmdRole.ExecuteNonQuery();
+                    }
+                }
+                tran.Commit();
+            }
+            catch
+            {
+                tran.Rollback();
+                throw;
+            }
+        }
+
+        public void Update(Employee employee, List<Guid> roleIds)
+        {
+            using var conn = _factory.Create();
+            conn.Open();
+            using var tran = conn.BeginTransaction();
+            try
+            {
+                const string sqlEmp = @"
+                    UPDATE Employee
+                    SET EmployeeCode = @EmployeeCode,
+                        FullName = @FullName,
+                        Email = @Email,
+                        IsActive = @IsActive,
+                        PositionId = @PositionId
+                    WHERE Id = @Id";
+
+                using (var cmd = new SqlCommand(sqlEmp, conn, tran))
+                {
+                    cmd.Parameters.AddWithValue("@Id", employee.Id);
+                    cmd.Parameters.AddWithValue("@EmployeeCode", employee.EmployeeCode ?? "");
+                    cmd.Parameters.AddWithValue("@FullName", employee.FullName ?? "");
+                    cmd.Parameters.AddWithValue("@Email", employee.Email ?? "");
+                    cmd.Parameters.AddWithValue("@IsActive", employee.IsActive);
+                    cmd.Parameters.AddWithValue("@PositionId", (object?)employee.PositionId ?? DBNull.Value);
+                    cmd.ExecuteNonQuery();
+                }
+
+                if (roleIds != null)
+                {
+                    const string sqlDelRoles = "DELETE FROM UserRole WHERE EmployeeId = @EmployeeId";
+                    using (var cmdDel = new SqlCommand(sqlDelRoles, conn, tran))
+                    {
+                        cmdDel.Parameters.AddWithValue("@EmployeeId", employee.Id);
+                        cmdDel.ExecuteNonQuery();
+                    }
+
+                    foreach (var roleId in roleIds)
+                    {
+                        const string sqlInsRole = "INSERT INTO UserRole (EmployeeId, RoleId) VALUES (@EmployeeId, @RoleId)";
+                        using var cmdIns = new SqlCommand(sqlInsRole, conn, tran);
+                        cmdIns.Parameters.AddWithValue("@EmployeeId", employee.Id);
+                        cmdIns.Parameters.AddWithValue("@RoleId", roleId);
+                        cmdIns.ExecuteNonQuery();
+                    }
+                }
+                tran.Commit();
+            }
+            catch
+            {
+                tran.Rollback();
+                throw;
+            }
+        }
+
+        public void Delete(Guid id)
+        {
+            using var conn = _factory.Create();
+            conn.Open();
+            using var tran = conn.BeginTransaction();
+            try
+            {
+                const string sqlDelRoles = "DELETE FROM UserRole WHERE EmployeeId = @EmployeeId";
+                using (var cmdDel = new SqlCommand(sqlDelRoles, conn, tran))
+                {
+                    cmdDel.Parameters.AddWithValue("@EmployeeId", id);
+                    cmdDel.ExecuteNonQuery();
+                }
+
+                const string sqlEmp = "DELETE FROM Employee WHERE Id = @Id";
+                using (var cmdEmp = new SqlCommand(sqlEmp, conn, tran))
+                {
+                    cmdEmp.Parameters.AddWithValue("@Id", id);
+                    cmdEmp.ExecuteNonQuery();
+                }
+                tran.Commit();
+            }
+            catch
+            {
+                tran.Rollback();
+                throw;
+            }
         }
     }
 }

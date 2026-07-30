@@ -577,3 +577,138 @@ footer a:hover {
   .builder-action-bar { bottom: .5rem; }
   .builder-action-bar .dx-button { width: 100% !important; }
 }
+
+.employee-card {
+  overflow: hidden;
+  border-radius: 16px !important;
+  border: none !important;
+  padding: 20px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0 !important;
+  box-shadow: 0 4px 12px -2px rgba(15, 23, 42, 0.05), 0 2px 6px -1px rgba(15, 23, 42, 0.03) !important;
+}
+
+.employee-card .dx-datagrid {
+  font-family: 'Inter', sans-serif !important;
+}
+
+.employee-card .dx-datagrid-headers {
+  background-color: #f8fafc !important;
+}
+
+.employee-card .dx-header-row td {
+  font-weight: 700 !important;
+  color: #475569 !important;
+  font-size: 0.78rem !important;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 14px 16px !important;
+  background-color: #f8fafc !important;
+}
+
+.employee-card .dx-data-row td {
+  padding: 12px !important;
+  vertical-align: middle !important;
+  border-bottom: 1px solid #f1f5f9 !important;
+}
+
+.employee-card .dx-data-row:hover {
+  background-color: #f8fafc !important;
+  transition: background-color 0.15s ease;
+}
+
+.employee-avatar-circle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  flex-shrink: 0;
+  border: 1px solid var(--border-color)
+}
+
+.badge-position {
+    display: inline-flex;
+    align-items: center;
+    font-size: 0.82rem;
+    color: #4338ca;
+    background-color: transparent;
+    padding: 4px 10px;
+    border-radius: 50rem;
+}
+
+.employee-code{
+    font-size: 0.82rem;
+}
+
+.badge-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.82rem;
+    padding: 4px 10px;
+    border-radius: 50rem;
+}
+
+.status-active {
+  color: #15803d;
+  background-color: #dcfce7;
+  border: 1px solid #bbf7d0;
+}
+
+.status-inactive {
+  color: #475569;
+  background-color: #f1f5f9;
+  border: 1px solid #e2e8f0;
+}
+
+.status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.status-active .status-dot {
+  background-color: #22c55e;
+  box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.2);
+}
+
+.status-inactive .status-dot {
+  background-color: #94a3b8;
+}
+
+.employee-card .dx-link {
+  text-decoration: none !important;
+}
+
+.btn-grid-icon {
+  padding: 10px;
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid transparent !important;
+  cursor: pointer;
+  text-decoration: none !important;
+}
+.employee-form-wrapper {
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.employee-form-wrapper .dx-form {
+  padding: 0.25rem 0;
+}
+
+.employee-form-wrapper .dx-field-item {
+  padding-bottom: 0.5rem !important;
+}
+
+.employee-form-wrapper .dx-tagbox .dx-tag {
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  margin: 2px !important;
+}

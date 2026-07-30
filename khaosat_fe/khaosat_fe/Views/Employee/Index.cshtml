@@ -1,0 +1,250 @@
+@{
+    ViewData["Title"] = "Quản lý nhân sự";
+}
+
+<div class="mb-4 d-flex justify-content-between align-items-center">
+    <div>
+        <h1 class="fw-bold text-dark mb-1 fs-3">@ViewData["Title"]</h1>
+        <p class="text-muted mb-0 small">Quản lý tài khoản, chức vụ, trạng thái và phân quyền vai trò cho mỗi nhân sự.</p>
+    </div>
+    <div>
+        @(Html.DevExtreme().Button()
+            .ID("btnAddEmployee")
+            .Text("Thêm nhân sự")
+            .Icon("add")
+            .Type(ButtonType.Default)
+        )
+    </div>
+</div>
+
+<div class="card employee-card">
+    <div class="card-body p-0">
+        @(Html.DevExtreme().DataGrid<khaosat_fe.Models.EmployeeViewModel>()
+            .ID("employeeGrid")
+            .DataSource(ds => ds.Mvc()
+                .Controller("Employee")
+                .LoadAction("GetEmployees")
+                .InsertAction("Create")
+                .UpdateAction("Update")
+                .DeleteAction("Delete")
+                .Key("Id")
+            )
+            .KeyExpr("Id")
+            .ShowBorders(false)
+            .ShowRowLines(true)
+            .ShowColumnLines(false)
+            .RowAlternationEnabled(false)
+            .WordWrapEnabled(true)
+            .ColumnAutoWidth(true)
+            .HoverStateEnabled(true)
+            .NoDataText("Chưa có nhân sự nào.")
+            .Paging(p => p.PageSize(10))
+            .Pager(p => p
+                .ShowPageSizeSelector(true)
+                .AllowedPageSizes(new[] { 5, 10, 20 })
+                .ShowInfo(true)
+                .InfoText("Trang {0}/{1} ({2} nhân sự)")
+            )
+            .SearchPanel(s => s.Visible(true).Width(300).Placeholder("Tìm kiếm nhân sự..."))
+            .HeaderFilter(hf => hf.Visible(true))
+            .Columns(columns =>
+            {
+                columns.AddFor(m => m.FullName)
+                    .Caption("Nhân sự")
+                    .MinWidth(180)
+                    .Alignment(HorizontalAlignment.Left)
+                    .CellTemplate(@<text>
+                        <div class="d-flex align-items-center gap-2 py-1">
+                            <div class="employee-avatar-circle">
+                                <%- (data.FullName || 'N').charAt(0).toUpperCase() %>
+                            </div>
+                            <div class="d-flex flex-column ms-1">
+                                <span class="fw-bold text-dark" style="font-size: 0.92rem;"><%- data.FullName %></span>
+                                <span class="text-muted small" style="font-size: 0.78rem;"><%- data.Email %></span>
+                            </div>
+                        </div>
+                    </text>);
+
+                columns.AddFor(m => m.EmployeeCode)
+                    .Caption("Mã NV")
+                    .Width(130)
+                    .Alignment(HorizontalAlignment.Left)
+                    .CellTemplate(@<text>
+                        <span class="employee-code"><%- data.EmployeeCode %></span>
+                    </text>);
+
+                columns.AddFor(m => m.Email)
+                    .Caption("Email")
+                    .Visible(false);
+
+                columns.AddFor(m => m.DepartmentId)
+                    .Caption("Phòng ban")
+                    .Visible(false);
+
+                columns.AddFor(m => m.PositionId)
+                    .Caption("Chức vụ (ID)")
+                    .Visible(false);
+
+                columns.AddFor(m => m.RoleIds)
+                    .Caption("Vai trò (IDs)")
+                    .Visible(false);
+
+                columns.AddFor(m => m.PositionName)
+                    .Caption("Chức vụ")
+                    .Width(220)
+                    .CellTemplate(@<text>
+                        <span class="badge-position">
+                            <%- data.PositionName || 'Chưa phân công' %>
+                        </span>
+                    </text>);
+
+                columns.AddFor(m => m.IsActive)
+                    .DataField("IsActive")
+                    .Caption("Trạng thái")
+                    .Width(200)
+                    .Alignment(HorizontalAlignment.Center)
+                    .CellTemplate(@<text>
+                        <span class="badge-status <%- data.IsActive ? 'status-active' : 'status-inactive' %>">
+                            <span class="status-dot"></span>
+                            <%- data.IsActive ? 'Đang hoạt động' : 'Ngừng hoạt động' %>
+                        </span>
+                    </text>
+                );
+
+                columns.Add()
+                    .Type(GridCommandColumnType.Buttons)
+                    .Caption("Thao tác")
+                    .Width(110)
+                    .Alignment(HorizontalAlignment.Center)
+                    .Buttons(buttons =>
+                    {
+                        buttons.Add()
+                            .Name(GridColumnButtonName.Edit)
+                            .Hint("Chỉnh sửa")
+                            .Icon("edit")
+                            .CssClass("btn-grid-icon me-1");
+
+                        buttons.Add()
+                            .Name(GridColumnButtonName.Delete)
+                            .Hint("Xóa")
+                            .Icon("trash")
+                            .CssClass("btn-grid-icon");
+                    });
+            })
+            .OnEditorPreparing("onEmployeeEditorPreparing")
+            .Editing(e => e.Mode(GridEditMode.Popup)
+                .AllowAdding(true)
+                .AllowUpdating(true)
+                .AllowDeleting(true)
+                .Popup(p => p
+                    .Title("Chỉnh sửa nhân sự")
+                    .ShowTitle(true)
+                    .Width(600)
+                    .Height(550)
+                )
+                .Form(f => f
+                    .LabelLocation(FormLabelLocation.Top)
+                    .Items(items =>
+                    {
+                        items.AddSimpleFor(m => m.EmployeeCode);
+                        items.AddSimpleFor(m => m.FullName);
+                        items.AddSimpleFor(m => m.Email);
+                        items.AddSimpleFor(m => m.DepartmentId)
+                            .Label(l => l.Text("Phòng ban"))
+                            .Editor(e => e.SelectBox()
+                                .DataSource(d => d.Mvc()
+                                    .Controller("Department")
+                                    .LoadAction("GetDepartments"))
+                                .ValueExpr("Id")
+                                .DisplayExpr("DepartmentName")
+                                .SearchEnabled(true)
+                            );
+                        items.AddSimpleFor(m => m.PositionId)
+                            .Label(l => l.Text("Chức vụ (Position)"))
+                            .Editor(e => e.SelectBox()
+                                .DataSource(d => d.Mvc()
+                                    .Controller("Department")
+                                    .LoadAction("GetPositions"))
+                                .ValueExpr("Id")
+                                .DisplayExpr("PositionName")
+                                .SearchEnabled(true)
+                            );
+                        items.AddSimpleFor(m => m.IsActive);
+                        items.AddSimpleFor(m => m.RoleIds)
+                            .Label(l => l.Text("Vai trò (Roles)"))
+                            .Editor(e => e.TagBox()
+                                .DataSource(d => d.Mvc()
+                                    .Controller("Employee")
+                                    .LoadAction("GetRoles"))
+                                .ValueExpr("Id")
+                                .DisplayExpr("RoleName")
+                                .SearchEnabled(true)
+                                .ShowSelectionControls(true)
+                                .ApplyValueMode(EditorApplyValueMode.UseButtons)
+                            );
+                    }))
+            )
+        )
+    </div>
+</div>
+
+<div id="employeePopup"></div>
+
+@(Html.DevExtreme().Toast()
+    .ID("employeeToast")
+    .DisplayTime(3000)
+    .Width(350)
+)
+
+<script>
+    window.EmployeeUrls = {
+        roles: "@Url.Action("GetRoles", "Employee")",
+        positions: "@Url.Action("GetPositions", "Employee")",
+        create: "@Url.Action("Create", "Employee")",
+        update: "@Url.Action("Update", "Employee")"
+    };
+
+    function onEmployeeEditorPreparing(e) {
+        if (e.dataField === "PositionId" && e.parentType === "dataRow") {
+            var deptId = e.row && e.row.data ? e.row.data.DepartmentId : null;
+            var url = (deptId && deptId !== "00000000-0000-0000-0000-000000000000")
+                ? "/Department/GetPositions?departmentId=" + deptId
+                : "/Department/GetPositions";
+
+            e.editorOptions.disabled = false;
+            e.editorOptions.dataSource = DevExpress.data.AspNet.createStore({
+                key: "Id",
+                loadUrl: url
+            });
+        }
+
+        if (e.dataField === "DepartmentId" && e.parentType === "dataRow") {
+            var baseHandler = e.editorOptions.onValueChanged;
+            e.editorOptions.onValueChanged = function (args) {
+                if (baseHandler) baseHandler(args);
+
+                var $form = e.component.element().find(".dx-form");
+                if ($form.length) {
+                    var formInstance = $form.dxForm("instance");
+                    if (formInstance) {
+                        var posEditor = formInstance.getEditor("PositionId");
+                        if (posEditor) {
+                            var newDeptId = args.value;
+                            var url = (newDeptId && newDeptId !== "00000000-0000-0000-0000-000000000000")
+                                ? "/Department/GetPositions?departmentId=" + newDeptId
+                                : "/Department/GetPositions";
+
+                            posEditor.option("value", null);
+                            posEditor.option("dataSource", DevExpress.data.AspNet.createStore({
+                                key: "Id",
+                                loadUrl: url
+                            }));
+                        }
+                    }
+                }
+            };
+        }
+    }
+</script>
+
+
