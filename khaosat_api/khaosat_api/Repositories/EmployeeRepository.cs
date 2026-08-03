@@ -163,7 +163,6 @@ namespace khaosat_api.Repositories
             while (reader.Read())
             {
                 var employeeId = (Guid)reader["Id"];
-
                 if (!employees.TryGetValue(employeeId, out var employee))
                 {
                     employee = new EmployeeResponse
@@ -174,26 +173,18 @@ namespace khaosat_api.Repositories
                         Email = reader["Email"].ToString()!,
                         IsActive = Convert.ToBoolean(reader["IsActive"]),
                         CreatedDate = Convert.ToDateTime(reader["CreatedDate"]),
-
                         PositionId = reader["PositionId"] != DBNull.Value
                             ? (Guid)reader["PositionId"]
                             : Guid.Empty,
-
                         PositionCode = reader["PositionCode"]?.ToString() ?? "",
-
                         PositionName = reader["PositionName"]?.ToString() ?? "",
-
                         DepartmentId = reader["DepartmentId"] != DBNull.Value
                             ? (Guid)reader["DepartmentId"]
                             : null,
-
                         DepartmentCode = reader["DepartmentCode"]?.ToString() ?? "",
-
                         DepartmentName = reader["DepartmentName"]?.ToString() ?? "",
-
                         Roles = new List<Role>()
                     };
-
                     employees.Add(employeeId, employee);
                 }
 

@@ -13,6 +13,7 @@
             .Text("Thêm nhân sự")
             .Icon("add")
             .Type(ButtonType.Default)
+            .OnClick("addEmployee")
         )
     </div>
 </div>
@@ -114,137 +115,127 @@
                 columns.Add()
                     .Type(GridCommandColumnType.Buttons)
                     .Caption("Thao tác")
-                    .Width(110)
-                    .Alignment(HorizontalAlignment.Center)
+                    .Width(120)
                     .Buttons(buttons =>
                     {
                         buttons.Add()
-                            .Name(GridColumnButtonName.Edit)
-                            .Hint("Chỉnh sửa")
                             .Icon("edit")
-                            .CssClass("btn-grid-icon me-1");
+                            .Hint("Chỉnh sửa")
+                            .OnClick("editEmployee");
 
                         buttons.Add()
-                            .Name(GridColumnButtonName.Delete)
-                            .Hint("Xóa")
                             .Icon("trash")
-                            .CssClass("btn-grid-icon");
+                            .Hint("Xóa")
+                            .OnClick("deleteEmployee");
                     });
             })
-            .OnEditorPreparing("onEmployeeEditorPreparing")
-            .Editing(e => e.Mode(GridEditMode.Popup)
-                .AllowAdding(true)
+            .Editing(e => e
                 .AllowUpdating(true)
                 .AllowDeleting(true)
-                .Popup(p => p
-                    .Title("Chỉnh sửa nhân sự")
-                    .ShowTitle(true)
-                    .Width(600)
-                    .Height(550)
-                )
-                .Form(f => f
-                    .LabelLocation(FormLabelLocation.Top)
-                    .Items(items =>
-                    {
-                        items.AddSimpleFor(m => m.EmployeeCode);
-                        items.AddSimpleFor(m => m.FullName);
-                        items.AddSimpleFor(m => m.Email);
-                        items.AddSimpleFor(m => m.DepartmentId)
-                            .Label(l => l.Text("Phòng ban"))
-                            .Editor(e => e.SelectBox()
-                                .DataSource(d => d.Mvc()
-                                    .Controller("Department")
-                                    .LoadAction("GetDepartments"))
-                                .ValueExpr("Id")
-                                .DisplayExpr("DepartmentName")
-                                .SearchEnabled(true)
-                            );
-                        items.AddSimpleFor(m => m.PositionId)
-                            .Label(l => l.Text("Chức vụ (Position)"))
-                            .Editor(e => e.SelectBox()
-                                .DataSource(d => d.Mvc()
-                                    .Controller("Department")
-                                    .LoadAction("GetPositions"))
-                                .ValueExpr("Id")
-                                .DisplayExpr("PositionName")
-                                .SearchEnabled(true)
-                            );
-                        items.AddSimpleFor(m => m.IsActive);
-                        items.AddSimpleFor(m => m.RoleIds)
-                            .Label(l => l.Text("Vai trò (Roles)"))
-                            .Editor(e => e.TagBox()
-                                .DataSource(d => d.Mvc()
-                                    .Controller("Employee")
-                                    .LoadAction("GetRoles"))
-                                .ValueExpr("Id")
-                                .DisplayExpr("RoleName")
-                                .SearchEnabled(true)
-                                .ShowSelectionControls(true)
-                                .ApplyValueMode(EditorApplyValueMode.UseButtons)
-                            );
-                    }))
             )
         )
     </div>
 </div>
 
-<div id="employeePopup"></div>
+@(Html.DevExtreme().Popup()
+    .ID("employeePopup")
+    .Title("Nhân sự")
+    .Visible(false)
+    .OnShown("employeePopupShown")
+    .Width(700)
+    .Height(650)
+    .ShowCloseButton(true)
+    .ToolbarItems(toolbar =>
+    {
+        toolbar.Add()
+            .Widget(w => w.Button()
+                .Text("Lưu")
+                .Type(ButtonType.Success)
+                .Icon("save")
+                .OnClick("saveEmployee")
+            )
+            .Location(ToolbarItemLocation.After)
+            .Toolbar(Toolbar.Bottom);
+
+        toolbar.Add()
+            .Widget(w => w.Button()
+                .Text("Hủy")
+                .Icon("close")
+                .OnClick("cancelEmployee")
+            )
+            .Location(ToolbarItemLocation.After)
+            .Toolbar(Toolbar.Bottom);
+    })
+    .ContentTemplate(@<text>
+
+        @(Html.DevExtreme().Form<EmployeeViewModel>()
+            .ID("employeeForm")
+            .LabelLocation(FormLabelLocation.Top)
+            .ColCount(2)
+            .Items(items =>
+            {
+                items.AddSimpleFor(x => x.EmployeeCode);
+                items.AddSimpleFor(x => x.FullName);
+                items.AddSimpleFor(x => x.Email)
+                    .Editor(e => e.TextBox()
+                        .Mode(TextBoxMode.Email)
+                    );
+                items.AddSimpleFor(x => x.DepartmentId)
+                    .Editor(e => e.SelectBox()
+                        .DataSource(new JS("departmentData"))
+                        .ValueExpr("Id")
+                        .DisplayExpr("DepartmentName")
+                        .OnValueChanged("departmentChanged")
+                    );
+                items.AddSimpleFor(x => x.PositionId)
+                    .Editor(e => e.SelectBox()
+                        .ValueExpr("Id")
+                        .DisplayExpr("PositionName")
+                    );
+                items.AddSimpleFor(x => x.RoleIds)
+                    .Editor(e => e.TagBox()
+                        .DataSource(d => d.Mvc()
+                            .Controller("Employee")
+                            .LoadAction("GetRoles"))
+                        .ValueExpr("Id")
+                        .DisplayExpr("RoleName")
+                    );
+                items.AddSimpleFor(x => x.IsActive)
+                    .Editor(e => e.CheckBox());
+            })
+        )
+    </text>)
+)
+
 
 @(Html.DevExtreme().Toast()
-    .ID("employeeToast")
+    .ID("toastEmployee")
     .DisplayTime(3000)
     .Width(350)
+    .Position(p => p
+    .My(HorizontalAlignment.Right, VerticalAlignment.Top)
+    .At(HorizontalAlignment.Right, VerticalAlignment.Top)
+    .Offset(-20, 20)
+    )
 )
 
 <script>
-    window.EmployeeUrls = {
+    var departmentData = [];
+    window.Employee = window.Employee || {};
+    window.Employee.Urls = {
         roles: "@Url.Action("GetRoles", "Employee")",
-        positions: "@Url.Action("GetPositions", "Employee")",
         create: "@Url.Action("Create", "Employee")",
-        update: "@Url.Action("Update", "Employee")"
+        update: "@Url.Action("Update", "Employee")",
+        delete: "@Url.Action("Delete", "Employee")",
+        departments: "@Url.Action("GetDepartments", "Department")",
+        positions: "@Url.Action("GetPositions", "Department")"
     };
-
-    function onEmployeeEditorPreparing(e) {
-        if (e.dataField === "PositionId" && e.parentType === "dataRow") {
-            var deptId = e.row && e.row.data ? e.row.data.DepartmentId : null;
-            var url = (deptId && deptId !== "00000000-0000-0000-0000-000000000000")
-                ? "/Department/GetPositions?departmentId=" + deptId
-                : "/Department/GetPositions";
-
-            e.editorOptions.disabled = false;
-            e.editorOptions.dataSource = DevExpress.data.AspNet.createStore({
-                key: "Id",
-                loadUrl: url
-            });
-        }
-
-        if (e.dataField === "DepartmentId" && e.parentType === "dataRow") {
-            var baseHandler = e.editorOptions.onValueChanged;
-            e.editorOptions.onValueChanged = function (args) {
-                if (baseHandler) baseHandler(args);
-
-                var $form = e.component.element().find(".dx-form");
-                if ($form.length) {
-                    var formInstance = $form.dxForm("instance");
-                    if (formInstance) {
-                        var posEditor = formInstance.getEditor("PositionId");
-                        if (posEditor) {
-                            var newDeptId = args.value;
-                            var url = (newDeptId && newDeptId !== "00000000-0000-0000-0000-000000000000")
-                                ? "/Department/GetPositions?departmentId=" + newDeptId
-                                : "/Department/GetPositions";
-
-                            posEditor.option("value", null);
-                            posEditor.option("dataSource", DevExpress.data.AspNet.createStore({
-                                key: "Id",
-                                loadUrl: url
-                            }));
-                        }
-                    }
-                }
-            };
-        }
-    }
 </script>
+
+<script src="~/js/common.js" asp-append-version="true"></script>
+<script src="~/js/employee/employee-constant.js" asp-append-version="true"></script>
+<script src="~/js/employee/employee-api.js" asp-append-version="true"></script>
+<script src="~/js/employee/employee-page.js" asp-append-version="true"></script>
+
 
 

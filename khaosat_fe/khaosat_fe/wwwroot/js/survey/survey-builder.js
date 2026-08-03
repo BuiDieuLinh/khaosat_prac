@@ -152,7 +152,7 @@
             if (error) return false;
             elements.push({ fieldName, sortOrder: index, configType: JSON.stringify({ DataType: isChoiceType(dataType) ? TYPE.SELECT : dataType, Caption: caption, DefaultValue: "", AllowNull: !required, IsMultiSelect: dataType === TYPE.CHECKBOX, Helper: helper, InputHelper: helper }), options });
         });
-        if (error) Survey.Utils.showToast(error, "error");
+        if (error) Common.Utils.showToast(error, "error");
         return error ? null : elements;
     }
 

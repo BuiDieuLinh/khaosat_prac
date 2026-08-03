@@ -72,7 +72,7 @@
                     return;
                 }
 
-                Survey.Utils.showToast("Đăng nhập thành công!", "success", "loginToast");
+                Common.Utils.showToast("Đăng nhập thành công!", "success", "loginToast");
                 window.setTimeout(() => window.location.assign(Survey.Urls.surveyIndex), 1000);
             }).fail(xhr => {
                 this.showError((xhr && xhr.message) || MESSAGE.systemError);

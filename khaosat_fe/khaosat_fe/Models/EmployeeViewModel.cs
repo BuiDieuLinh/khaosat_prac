@@ -1,21 +1,28 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 
 namespace khaosat_fe.Models
 {
     public class EmployeeViewModel
     {
         public Guid Id { get; set; }
+
+        [Display(Name = "Mã NV")]
         public string EmployeeCode { get; set; } = string.Empty;
+
+        [Display(Name = "Tên đầy đủ")]
         public string FullName { get; set; } = string.Empty;
         public string Email { get; set; } = string.Empty;
         public bool IsActive { get; set; }
         public DateTime CreatedDate { get; set; }
 
+        [Display(Name = "Chức vụ")]
         public Guid? PositionId { get; set; }
         public string? PositionName { get; set; }
         public string? PositionCode { get; set; }
 
+        [Display(Name = "Phòng ban")]
         public Guid? DepartmentId { get; set; }
         public string? DepartmentName { get; set; }
         public string? DepartmentCode { get; set; }

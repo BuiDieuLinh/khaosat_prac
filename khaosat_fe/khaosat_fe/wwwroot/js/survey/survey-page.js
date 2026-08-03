@@ -2,7 +2,8 @@
     "use strict";
 
     const Survey = window.Survey = window.Survey || {};
-    const { selector: S } = Survey.Constants;
+    const Common = window.Common = window.Common || {};
+    const { selector: S } = Survey.Constants || {};
     let isSaving = false;
 
     function widgetValue(selector, widgetName) {
@@ -11,8 +12,8 @@
     }
 
     function collectSurvey() {
-        const startDate = Survey.Utils.toLocalISOString(widgetValue(S.surveyStartDate, "dxDateBox"));
-        const endDate = Survey.Utils.toLocalISOString(widgetValue(S.surveyEndDate, "dxDateBox"));
+        const startDate = Common.Utils.toLocalISOString(widgetValue(S.surveyStartDate, "dxDateBox"));
+        const endDate = Common.Utils.toLocalISOString(widgetValue(S.surveyEndDate, "dxDateBox"));
         return {
             code: String(widgetValue(S.surveyCode, "dxTextBox") || "").trim(),
             name: String(widgetValue(S.surveyName, "dxTextBox") || "").trim(),
@@ -32,10 +33,10 @@
         isSaving = true;
         Survey.Api.saveSurvey(survey).done(function () {
             const isEdit = Boolean((Survey.Urls || {}).saveSurvey);
-            Survey.Utils.showToast(isEdit ? "Cập nhật khảo sát thành công!" : "Tạo khảo sát thành công!", "success");
+            Common.Utils.showToast(isEdit ? "Cập nhật khảo sát thành công!" : "Tạo khảo sát thành công!", "success");
             window.setTimeout(function () { window.location.assign(Survey.Urls.index); }, 1500);
         }).fail(function (xhr) {
-            Survey.Utils.showToast(Survey.Api.getErrorMessage(xhr), "error");
+            Common.Utils.showToast(Survey.Api.getErrorMessage(xhr), "error");
         }).always(function () {
             isSaving = false;
         });
@@ -63,7 +64,7 @@
             const values = Array.isArray(value) ? value : [value];
             values.filter(value => value !== null && value !== undefined && value !== "").forEach(function (value) {
                 const option = (element.options || []).find(option => String(option.value) === String(value));
-                answers.push({ elementId: element.id, optionId: option ? option.id : null, value: value instanceof Date ? Survey.Utils.toLocalISOString(value) : String(value) });
+                answers.push({ elementId: element.id, optionId: option ? option.id : null, value: value instanceof Date ? Common.Utils.toLocalISOString(value) : String(value) });
             });
         });
         return answers;
@@ -71,15 +72,41 @@
 
     function submitResponse() {
         const employeeId = $(S.employeeId).val();
-        if (!employeeId) return Survey.Utils.showToast("Không tìm thấy thông tin nhân viên đăng nhập!", "error", "toastDetail");
+        if (!employeeId) return Common.Utils.showToast("Không tìm thấy thông tin nhân viên đăng nhập!", "error", "toastDetail");
         if (!Survey.Validation.validateResponse(Survey.surveyElements || [])) return;
 
         Survey.Api.submitResponse({ surveyId: Survey.surveyId, employeeId, answers: collectAnswers(Survey.surveyElements) })
             .done(function () {
-                Survey.Utils.showToast("Gửi khảo sát thành công!", "success", "toastDetail");
+                Common.Utils.showToast("Gửi khảo sát thành công!", "success", "toastDetail");
                 window.setTimeout(function () { window.location.assign(Survey.Urls.index); }, 1500);
             })
-            .fail(function (xhr) { Survey.Utils.showToast(`Lỗi gửi khảo sát: ${Survey.Api.getErrorMessage(xhr)}`, "error", "toastDetail"); });
+            .fail(function (xhr) { Common.Utils.showToast(`Lỗi gửi khảo sát: ${Survey.Api.getErrorMessage(xhr)}`, "error", "toastDetail"); });
+    }
+
+    function loadPositions(departmentId, currentPosId) {
+        const positionWidget = $(S.targetPosition).dxSelectBox("instance");
+        if (!positionWidget) return;
+
+        if (!departmentId) {
+            positionWidget.option("dataSource", []);
+            positionWidget.option("value", null);
+            positionWidget.option("disabled", true);
+            return;
+        }
+
+        const url = (Survey.Urls || {}).getPositions || "/Department/GetPositions";
+        $.get(url, { departmentId: departmentId })
+            .done(function (positions) {
+                positionWidget.option("disabled", false);
+                positionWidget.option("dataSource", positions || []);
+                if (currentPosId) {
+                    positionWidget.option("value", currentPosId);
+                }
+            })
+            .fail(function () {
+                positionWidget.option("dataSource", []);
+                positionWidget.option("disabled", true);
+            });
     }
 
     function initializeTargetPosition() {
@@ -87,16 +114,16 @@
         const position = $(S.targetPosition).dxSelectBox("instance");
         if (!department || !position) return;
 
-        const positions = {
-            IT: [{ Value: "dev", DisplayText: "Lập trình .NET (3)" }, { Value: "qa", DisplayText: "Kiểm thử (QA) (2)" }, { Value: "devops", DisplayText: "DevOps (1)" }],
-            HR: [{ Value: "recruitment", DisplayText: "Tuyển dụng" }, { Value: "cb", DisplayText: "Lương & Phúc lợi (C&B)" }, { Value: "training", DisplayText: "Đào tạo" }],
-            Sales: [{ Value: "sales_north", DisplayText: "Sales miền Bắc" }, { Value: "sales_south", DisplayText: "Sales miền Nam" }],
-            All: [{ Value: "all", DisplayText: "Tất cả nhân sự" }]
-        };
         department.on("valueChanged", function (event) {
-            const dataSource = positions[event.value] || [];
-            position.option({ value: null, dataSource, disabled: !dataSource.length });
+            position.option("value", null);
+            loadPositions(event.value, null);
         });
+
+        const currentDeptId = department.option("value");
+        if (currentDeptId) {
+            const currentPosId = position.option("value");
+            loadPositions(currentDeptId, currentPosId);
+        }
     }
 
     Survey.Event = Survey.Event || {};

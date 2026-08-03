@@ -1,10 +1,12 @@
 using khaosat_api.DTOs;
 using khaosat_api.Services.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System;
 
 namespace khaosat_api.Controllers
 {
+    [Authorize]
     [ApiController]
     [Route("api/employee")]
     public class EmployeeController : Controller

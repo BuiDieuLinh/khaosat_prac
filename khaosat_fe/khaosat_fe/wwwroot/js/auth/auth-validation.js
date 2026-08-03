@@ -10,7 +10,7 @@
                 return true;
             }
 
-            Survey.Utils.showToast(Auth.Constants.message.missingCredentials, "error", "loginToast");
+            Common.Utils.showToast(Auth.Constants.message.missingCredentials, "error", "loginToast");
             return false;
         }
     };

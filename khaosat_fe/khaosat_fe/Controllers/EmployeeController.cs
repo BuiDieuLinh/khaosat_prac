@@ -1,4 +1,5 @@
 using khaosat_fe.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
@@ -8,6 +9,7 @@ using System.Threading.Tasks;
 
 namespace khaosat_fe.Controllers
 {
+    [Authorize]
     public class EmployeeController : Controller
     {
         private readonly HttpClient _httpClient;

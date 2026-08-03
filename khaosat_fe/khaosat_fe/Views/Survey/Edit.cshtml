@@ -90,13 +90,11 @@
                 <label class="form-label text-secondary small">Phòng ban mục tiêu</label>
                 @(Html.DevExtreme().SelectBox()
                 .ID("surveyTargetDepartment")
-                .DataSource(new[] {
-                new { Value = "IT", Text = "Phòng Công nghệ thông tin" },
-                new { Value = "HR", Text = "Phòng Nhân sự" },
-                new { Value = "Sales", Text = "Phòng Kinh doanh (Sales)" }
-                })
-                .ValueExpr("Value")
-                .DisplayExpr("Text")
+                .DataSource(d => d.Mvc()
+                    .Controller("Department")
+                    .LoadAction("GetDepartments"))
+                .ValueExpr("Id")
+                .DisplayExpr("DepartmentName")
                 .Placeholder("Chọn phòng ban mục tiêu...")
                 )
             </div>
@@ -104,8 +102,8 @@
                 <label class="form-label text-secondary small">Vị trí mục tiêu</label>
                 @(Html.DevExtreme().SelectBox()
                 .ID("surveyTargetPosition")
-                .ValueExpr("Value")
-                .DisplayExpr("DisplayText")
+                .ValueExpr("Id")
+                .DisplayExpr("PositionName")
                 .Placeholder("Chọn vị trí...")
                 .Disabled(true)
                 )

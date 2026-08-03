@@ -1,8 +1,8 @@
 // common.js
-window.Survey = window.Survey || {};
-window.Survey.Utils = {
+window.Common = window.Common || {};
+window.Common.Utils = {
     showToast: function(message, type, toastId) {
-        const selector = toastId ? `#${toastId}` : "#toastCreator, #toastDetail, #loginToast";
+        const selector = toastId ? `#${toastId}` : "#toastCreator, #toastDetail, #loginToast, #toastEmployee";
         const toast = $(selector).first().dxToast("instance");
         if (toast) {
             toast.option({
@@ -35,5 +35,33 @@ window.Survey.Utils = {
 
     focusInput: function(elementId) {
         $(`#${elementId}`).focus();
+    },
+
+    callApi: function (url, method, payload) {
+        if (!url) {
+            return $.Deferred().reject({ responseText: "Không tìm thấy địa chỉ API." }).promise();
+        }
+
+        const isFormData = payload instanceof FormData;
+        const ajaxConfig = {
+            url: url,
+            method: method || "GET"
+        };
+
+        if (isFormData) {
+            ajaxConfig.data = payload;
+            ajaxConfig.processData = false;
+            ajaxConfig.contentType = false;
+        } else {
+            ajaxConfig.contentType = "application/json";
+            ajaxConfig.data = payload !== undefined && payload !== null ? JSON.stringify(payload) : null;
+        }
+
+        return $.ajax(ajaxConfig);
     }
 };
+
+// Backward compatibility bridge
+window.Survey = window.Survey || {};
+window.Survey.Utils = window.Common.Utils;
+

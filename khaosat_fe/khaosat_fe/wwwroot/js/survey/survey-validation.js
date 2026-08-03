@@ -2,10 +2,11 @@
     "use strict";
 
     const Survey = window.Survey = window.Survey || {};
-    const { selector: S, message: MESSAGE } = Survey.Constants;
+    const Common = window.Common = window.Common || {};
+    const { selector: S, message: MESSAGE } = Survey.Constants || {};
 
     function showError(message, toastId) {
-        Survey.Utils.showToast(message, "error", toastId);
+        Common.Utils.showToast(message, "error", toastId);
         return false;
     }
 
