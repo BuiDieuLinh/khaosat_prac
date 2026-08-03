@@ -179,6 +179,8 @@
                 items.AddSimpleFor(x => x.Email)
                     .Editor(e => e.TextBox()
                         .Mode(TextBoxMode.Email)
+                        .Option("validationMessageMode", "always")
+                        .Option("validationMessagePosition", "bottom")
                     );
                 items.AddSimpleFor(x => x.DepartmentId)
                     .Editor(e => e.SelectBox()

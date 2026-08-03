@@ -123,7 +123,11 @@
         const urls = getUrls();
         const targetUrl = isUpdate ? urls.update : urls.create;
         const httpMethod = isUpdate ? "PUT" : "POST";
+        const result = form.validate();
 
+        if (!result.isValid) {
+            return;
+        }
         const formData = new FormData();
         if (isUpdate) {
             formData.append("key", data.Id);
