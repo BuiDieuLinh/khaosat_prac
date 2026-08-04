@@ -1,3 +1,4 @@
+using khaosat_fe.Validation;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
@@ -9,18 +10,23 @@ namespace khaosat_fe.Models
     {
         public Guid Id { get; set; }
 
+        [EmployeeValidation.EmployeeCode]
         [Display(Name = "Mã NV")]
         [Required(ErrorMessage = "Mã nhân viên không được để trống")]
+        [RegularExpression(@"^EMP.*$", ErrorMessage = "Mã nhân viên phải bắt đầu bằng EMP")]
+        [Remote("CheckEmployeeCodeExists", "Employee", ErrorMessage = "Mã nhân viên đã tồn tại")]
         public string EmployeeCode { get; set; } = string.Empty;
 
+        [EmployeeValidation.FullName]
         [Display(Name = "Tên đầy đủ")]
         [Required(ErrorMessage = "Tên đầy đủ không được để trống")]
         [RegularExpression(@"^[^0-9]+$", ErrorMessage = "Không sử dụng ký tự số trong tên.")]
         public string FullName { get; set; } = string.Empty;
 
+        [EmployeeValidation.CompanyEmail("oos.com.vn")]
         [Required(ErrorMessage = "Email không được để trống")]
-        [RegularExpression(@"^[\d\w._-]+@[\d\w._-]+\.[\w]+$", ErrorMessage = "Email không hợp lệ")]
-        [Remote("CheckEmailAddress", "RemoteValidation", ErrorMessage = "Email đã được đăng ký")]
+        [RegularExpression(@"^[\d\w._-]+@oos\.com\.vn$", ErrorMessage = "Email phải thuộc domain @oos.com.vn")]
+        [Remote("CheckEmailExists", "Employee", AdditionalFields = nameof(EmployeeCode), ErrorMessage = "Email đã được đăng ký")]
         public string Email { get; set; } = string.Empty;
         public bool IsActive { get; set; }
         public DateTime CreatedDate { get; set; }
@@ -39,6 +45,7 @@ namespace khaosat_fe.Models
 
         public List<RoleViewModel> Roles { get; set; } = new List<RoleViewModel>();
         public string RoleNames => string.Join(", ", Roles.Select(r => r.RoleName));
+        [Display(Name = "Phân quyền")]
         public List<Guid> RoleIds { get; set; } = new();
     }
 

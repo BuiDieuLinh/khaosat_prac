@@ -141,8 +141,19 @@ namespace khaosat_api.Services
             return _repository.GetRoles();
         }
 
-        public void Create(EmployeeCreateDto dto)
+        public async Task Create(EmployeeCreateDto dto)
         {
+            var codeExist = await _repository.CheckEmployeeCodeExistsAsync(dto.EmployeeCode);
+            if (codeExist)
+            {
+                throw new Exception("Mã nhân viên này đã tồn tại.");
+            }
+
+            var emailExist = await _repository.CheckEmailExistsAsync(dto.Email);
+            if (emailExist)
+            {
+                throw new Exception("Email này đã tồn tại.");
+            }
             var employee = new Employee
             {
                 Id = Guid.NewGuid(),
@@ -176,6 +187,16 @@ namespace khaosat_api.Services
         public void Delete(Guid id)
         {
             _repository.Delete(id);
+        }
+
+        public async Task<bool> CheckEmailExistsAsync(string email)
+        {
+            return await _repository.CheckEmailExistsAsync(email);
+        }
+        
+        public async Task<bool> CheckEmployeeCodeExistsAsync(string employeeCode)
+        {
+            return await _repository.CheckEmployeeCodeExistsAsync(employeeCode);
         }
     }
 }

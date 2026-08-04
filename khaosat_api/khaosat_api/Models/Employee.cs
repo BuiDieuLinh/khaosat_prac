@@ -1,5 +1,7 @@
+using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 
 namespace khaosat_api.Models
 {
@@ -20,8 +22,19 @@ namespace khaosat_api.Models
     public class EmployeeResponse
     {
         public Guid Id { get; set; }
+        [Display(Name = "Mã nhân viên")]
+        [Required(ErrorMessage = "Mã nhân viên không được để trống")]
+        [StringLength(8, MinimumLength = 2, ErrorMessage = "Độ dài phải từ 2 đến 8 ký tự")]
         public string EmployeeCode { get; set; } = string.Empty;
+
+        [Display(Name = "Tên đầy đủ")]
+        [Required(ErrorMessage = "Tên đầy đủ không được để trống")]
+        [RegularExpression("^[^0-9]+$", ErrorMessage = "Tên đầy đủ không chứa ký tự số.")]
         public string FullName { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Email không được để trống")]
+        [RegularExpression(@"^[\d\w._-]+@[\d\w._-]+\.[\w]+$", ErrorMessage = "Email không hợp lệ")]
+        [Remote("CheckEmailAddress", "RemoteValidation", ErrorMessage = "Email đã được đăng ký")]
         public string Email { get; set; } = string.Empty;
         public bool IsActive { get; set; }
         public DateTime CreatedDate { get; set; }

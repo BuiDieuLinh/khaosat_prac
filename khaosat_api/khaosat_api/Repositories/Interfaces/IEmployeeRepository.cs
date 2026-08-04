@@ -17,5 +17,7 @@ namespace khaosat_api.Repositories.Interfaces
         void Create(Employee employee, List<Guid> roleIds);
         void Update(Employee employee, List<Guid> roleIds);
         void Delete(Guid id);
+        Task<bool> CheckEmailExistsAsync(string email);
+        Task<bool> CheckEmployeeCodeExistsAsync(string employeeCode);
     }
 }

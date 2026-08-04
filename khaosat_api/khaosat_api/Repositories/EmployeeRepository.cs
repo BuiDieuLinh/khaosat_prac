@@ -409,5 +409,43 @@ namespace khaosat_api.Repositories
                 throw;
             }
         }
+
+        public async Task<bool> CheckEmailExistsAsync(string email)
+        {
+            using var conn = _factory.Create();
+
+            await conn.OpenAsync();
+
+            const string sql = @"
+                SELECT COUNT(1)
+                FROM Employee
+                WHERE Email = @Email";
+
+            using SqlCommand command = new SqlCommand(sql, conn);
+            command.Parameters.AddWithValue("@Email", email);
+
+            int count = (int)await command.ExecuteScalarAsync();
+
+            return count > 0;
+        }
+
+        public async Task<bool> CheckEmployeeCodeExistsAsync(string employeeCode)
+        {
+            using var conn = _factory.Create();
+
+            await conn.OpenAsync();
+
+            const string sql = @"
+                SELECT COUNT(1)
+                FROM Employee
+                WHERE EmployeeCode = @EmployeeCode";
+
+            using SqlCommand command = new SqlCommand(sql, conn);
+            command.Parameters.AddWithValue("@EmployeeCode", employeeCode);
+
+            int count = (int)await command.ExecuteScalarAsync();
+
+            return count > 0;
+        }
     }
 }

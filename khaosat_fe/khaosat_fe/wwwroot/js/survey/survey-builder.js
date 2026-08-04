@@ -156,8 +156,15 @@
         return error ? null : elements;
     }
 
+    function clearQuestions() {
+        questionCounter = 0;
+        optionCounter = 0;
+        $(S.questionsContainer).empty();
+        toggleEmptyState();
+    }
+
     Survey.Element = Survey.Element || {};
-    Object.assign(Survey.Element, { addQuestion, removeQuestion, addOption, removeOption, toggleEmptyState, gatherSurveyData: collectQuestions });
+    Object.assign(Survey.Element, { addQuestion, removeQuestion, addOption, removeOption, clearQuestions, toggleEmptyState, gatherSurveyData: collectQuestions });
 
     Survey.Builder = {
         init() {

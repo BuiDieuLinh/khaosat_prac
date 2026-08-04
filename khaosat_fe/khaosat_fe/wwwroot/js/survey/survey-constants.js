@@ -15,6 +15,8 @@
             questionsContainer: "#questionsContainer",
             emptyState: "#emptyState",
             importPopup: "#importExcelPopup",
+            importFile: "#importExcelFile",
+            importMode: "#importMode",
             targetDepartment: "#surveyTargetDepartment",
             targetPosition: "#surveyTargetPosition",
             employeeId: "#employeeId"

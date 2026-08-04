@@ -126,6 +126,208 @@
         }
     }
 
+    let selectedExcelFile = null;
+
+    function handleExcelUpload(e) {
+        if (e && e.value && e.value.length > 0) {
+            selectedExcelFile = e.value[0];
+        } else {
+            selectedExcelFile = null;
+        }
+    }
+
+    function onImportPopupHidden() {
+        selectedExcelFile = null;
+        const uploader = $(S.importFile).dxFileUploader("instance");
+        if (uploader) uploader.reset();
+    }
+
+    function downloadTemplate() {
+        if (typeof ExcelJS === "undefined" || typeof saveAs === "undefined") {
+            Common.Utils.showToast("Thư viện xuất Excel chưa sẵn sàng!", "error");
+            return;
+        }
+
+        const workbook = new ExcelJS.Workbook();
+        const worksheet = workbook.addWorksheet("Mau_Cau_Hoi_Khao_Sat");
+
+        worksheet.columns = [
+            { header: "STT", key: "stt", width: 8 },
+            { header: "Mã trường (FieldName)", key: "fieldName", width: 25 },
+            { header: "Nội dung câu hỏi (Caption)", key: "caption", width: 45 },
+            { header: "Kiểu câu hỏi (DataType)", key: "dataType", width: 22 },
+            { header: "Bắt buộc (Required)", key: "required", width: 18 },
+            { header: "Gợi ý (Helper)", key: "helper", width: 30 },
+            { header: "Danh sách đáp án (Options)", key: "options", width: 50 }
+        ];
+
+        worksheet.addRow({
+            stt: 1,
+            fieldName: "mucDoHaiLong",
+            caption: "Đánh giá mức độ hài lòng của bạn về môi trường làm việc",
+            dataType: "Radio",
+            required: "Có",
+            helper: "Chọn 1 đáp án phù hợp nhất",
+            options: "1: Rất tốt; 2: Hài lòng; 3: Bình thường; 4: Chưa tốt"
+        });
+
+        worksheet.addRow({
+            stt: 2,
+            fieldName: "cheDoPhucLoi",
+            caption: "Các chế độ đãi ngộ bạn mong muốn bổ sung",
+            dataType: "Checkbox",
+            required: "Không",
+            helper: "Có thể chọn nhiều đáp án",
+            options: "Bảo hiểm sức khỏe cao cấp; Phụ cấp du lịch; Thưởng hiệu suất"
+        });
+
+        worksheet.addRow({
+            stt: 3,
+            fieldName: "yKienDongGop",
+            caption: "Ý kiến đóng góp khác cho công ty",
+            dataType: "TextArea",
+            required: "Không",
+            helper: "Nhập phản hồi chi tiết nếu có",
+            options: ""
+        });
+
+        const headerRow = worksheet.getRow(1);
+        headerRow.font = { bold: true, color: { argb: "FFFFFF" } };
+        headerRow.fill = {
+            type: "pattern",
+            pattern: "solid",
+            fgColor: { argb: "1B6EC2" }
+        };
+        headerRow.alignment = { vertical: "middle", horizontal: "center" };
+
+        workbook.xlsx.writeBuffer().then(function (buffer) {
+            const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+            saveAs(blob, "Mau_Cau_Hoi_Khao_Sat.xlsx");
+        }).catch(function (err) {
+            Common.Utils.showToast("Lỗi tải file mẫu: " + err.message, "error");
+        });
+    }
+
+    function executeImport() {
+        if (!selectedExcelFile) {
+            Common.Utils.showToast("Vui lòng chọn tệp Excel để nhập!", "error");
+            return;
+        }
+
+        if (typeof ExcelJS === "undefined") {
+            Common.Utils.showToast("Thư viện đọc Excel chưa sẵn sàng!", "error");
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = function (e) {
+            const buffer = e.target.result;
+            const workbook = new ExcelJS.Workbook();
+            workbook.xlsx.load(buffer).then(function () {
+                const worksheet = workbook.worksheets[0];
+                if (!worksheet) {
+                    Common.Utils.showToast("Tệp Excel không chứa dữ liệu!", "error");
+                    return;
+                }
+
+                const questions = [];
+                worksheet.eachRow(function (row, rowNumber) {
+                    if (rowNumber === 1) return; // Skip header
+
+                    const getVal = (colIndex) => {
+                        const cell = row.getCell(colIndex);
+                        if (!cell || cell.value === null || cell.value === undefined) return "";
+                        if (typeof cell.value === "object") {
+                            if (cell.value.result !== undefined) return String(cell.value.result).trim();
+                            if (cell.value.text !== undefined) return String(cell.value.text).trim();
+                            if (cell.value.richText && Array.isArray(cell.value.richText)) {
+                                return cell.value.richText.map(t => t.text).join("").trim();
+                            }
+                        }
+                        return String(cell.value).trim();
+                    };
+
+                    const fieldName = getVal(2);
+                    const caption = getVal(3);
+                    const dataTypeRaw = getVal(4);
+                    const requiredRaw = getVal(5);
+                    const helper = getVal(6);
+                    const optionsRaw = getVal(7);
+
+                    if (!fieldName && !caption) return;
+
+                    const requiredLower = requiredRaw.toLowerCase();
+                    const required = requiredLower === "có" || requiredLower === "yes" || requiredLower === "true" || requiredLower === "1";
+
+                    let dataType = "TextBox";
+                    const dtLower = dataTypeRaw.toLowerCase();
+                    if (dtLower.includes("check") || dtLower.includes("nhiều")) dataType = "Checkbox";
+                    else if (dtLower.includes("radio") || dtLower.includes("1") || dtLower.includes("một")) dataType = "Radio";
+                    else if (dtLower.includes("number") || dtLower.includes("số")) dataType = "Number";
+                    else if (dtLower.includes("date") || dtLower.includes("ngày")) dataType = "Datetime";
+                    else if (dtLower.includes("area") || dtLower.includes("nội dung")) dataType = "TextArea";
+                    else if (dtLower.includes("text") || dtLower.includes("chữ")) dataType = "TextBox";
+
+                    const options = [];
+                    if (optionsRaw) {
+                        const rawItems = optionsRaw.split(/;\s*|\n+/);
+                        rawItems.forEach(item => {
+                            const trimmed = item.trim();
+                            if (trimmed) {
+                                const colonIdx = trimmed.indexOf(":");
+                                let value = trimmed;
+                                let displayText = trimmed;
+                                if (colonIdx > -1) {
+                                    value = trimmed.substring(0, colonIdx).trim();
+                                    displayText = trimmed.substring(colonIdx + 1).trim();
+                                }
+                                options.push({ value: value || displayText, displayText: displayText || value });
+                            }
+                        });
+                    }
+
+                    questions.push({
+                        fieldName: fieldName || `field_${rowNumber}`,
+                        caption: caption || fieldName,
+                        dataType,
+                        required,
+                        helper,
+                        options
+                    });
+                });
+
+                if (!questions.length) {
+                    Common.Utils.showToast("Không tìm thấy câu hỏi hợp lệ trong tệp Excel!", "error");
+                    return;
+                }
+
+                const radioWidget = $(S.importMode).dxRadioGroup("instance");
+                const mode = radioWidget ? radioWidget.option("value") : "overwrite";
+
+                if (mode === "overwrite") {
+                    if (Survey.Element && Survey.Element.clearQuestions) {
+                        Survey.Element.clearQuestions();
+                    } else {
+                        $(S.questionsContainer).empty();
+                        Survey.Element.toggleEmptyState();
+                    }
+                }
+
+                questions.forEach(q => {
+                    Survey.Element.addQuestion(q);
+                });
+
+                Common.Utils.showToast(`Đã nhập thành công ${questions.length} câu hỏi từ Excel!`, "success");
+                const popup = $(S.importPopup).dxPopup("instance");
+                if (popup) popup.hide();
+            }).catch(function (err) {
+                Common.Utils.showToast("Lỗi xử lý file Excel: " + err.message, "error");
+            });
+        };
+
+        reader.readAsArrayBuffer(selectedExcelFile);
+    }
+
     Survey.Event = Survey.Event || {};
     Survey.Event.saveSurvey = saveSurvey;
     Survey.Event.submitSurvey = submitResponse;
@@ -133,6 +335,10 @@
         const popup = $(S.importPopup).dxPopup("instance");
         if (popup) popup.show();
     };
+    Survey.Event.downloadTemplate = downloadTemplate;
+    Survey.Event.handleExcelUpload = handleExcelUpload;
+    Survey.Event.executeImport = executeImport;
+    Survey.Event.onImportPopupHidden = onImportPopupHidden;
 
     Survey.Page = {
         init() {

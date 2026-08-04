@@ -27,8 +27,8 @@ ViewData["Title"] = "Tạo khảo sát mới";
             <div class="col-md-4">
                 <label class="form-label text-secondary   small">Mã khảo sát <span class="text-danger">*</span></label>
                 @(Html.DevExtreme().TextBox()
-                .ID("surveyCode")
-                .Placeholder("Ví dụ: KS_NV_2026")
+                    .ID("surveyCode")
+                    .Placeholder("Ví dụ: KS_NV_2026")
                 )
             </div>
             <div class="col-md-8">
@@ -200,6 +200,7 @@ ViewData["Title"] = "Tạo khảo sát mới";
 .Height(480)
 .Visible(false)
 .DragEnabled(true)
+.OnHidden("function(e) { window.Survey.Event.onImportPopupHidden(e); }")
 .ContentTemplate(@<text>
     <div class="alert alert-secondary small mb-3">
         <strong>Hướng dẫn:</strong> Tải file mẫu, điền các câu hỏi và chọn tệp để nhập. Đối với câu hỏi trắc nghiệm (Radio/Checkbox), các đáp án viết dưới dạng <code>Mã: Tên hiển thị</code>, phân tách bằng dấu chấm phẩy (;). Ví dụ: <code>1: Rất tốt; 2: Bình thường</code>.
@@ -212,6 +213,7 @@ ViewData["Title"] = "Tạo khảo sát mới";
         .Type(ButtonType.Normal)
         .StylingMode(ButtonStylingMode.Outlined)
         .Icon("download")
+        .OnClick("window.Survey.Event.downloadTemplate")
         )
     </div>
 
@@ -223,6 +225,7 @@ ViewData["Title"] = "Tạo khảo sát mới";
         .LabelText("")
         .Accept(".xlsx, .xls")
         .UploadMode(FileUploadMode.UseForm)
+        .OnValueChanged("function(e) { window.Survey.Event.handleExcelUpload(e); }")
         )
     </div>
 
@@ -251,7 +254,7 @@ ViewData["Title"] = "Tạo khảo sát mới";
         @(Html.DevExtreme().Button()
         .Text("Thực hiện nhập")
         .Type(ButtonType.Default)
-        .OnClick("function() { $('#importExcelPopup').dxPopup('instance').hide(); }")
+        .OnClick("window.Survey.Event.executeImport")
         )
     </div>
 </text>)
@@ -265,6 +268,9 @@ ViewData["Title"] = "Tạo khảo sát mới";
     };
 </script>
 
+<script src="~/js/devextreme/jszip.min.js"></script>
+<script src="~/js/devextreme/dx-exceljs-fork.min.js"></script>
+<script src="~/js/devextreme/FileSaver.min.js"></script>
 <script src="~/js/common.js" asp-append-version="true"></script>
 <script src="~/js/survey/survey-constants.js" asp-append-version="true"></script>
 <script src="~/js/survey/survey-api.js" asp-append-version="true"></script>

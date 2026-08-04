@@ -164,7 +164,7 @@ namespace khaosat_fe.Controllers
             }
         }
 
-        [HttpPost]
+        [HttpPut]
         public async Task<IActionResult> UpdateNested(Guid id, [FromBody] SurveyCreateNestedViewModel model)
         {
             if (!ModelState.IsValid)

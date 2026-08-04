@@ -18,12 +18,19 @@
         if (popup) popup.show();
         const form = $(Employee.Constants.selector.employeeForm).dxForm("instance");
         form.option("formData", {});
+        form.getEditor("EmployeeCode").option("disabled", false);
+        form.getEditor("Email").option("disabled", false);
     }
 
     function editEmployee(e) {
         selectedEmployee = e.row.data;
         const popup = $(Employee.Constants.selector.employeePopup).dxPopup("instance");
         if (popup) popup.show();
+
+        const form = $(Employee.Constants.selector.employeeForm).dxForm("instance");
+        form.getEditor("EmployeeCode").option("disabled", true);
+        form.getEditor("Email").option("disabled", true);
+
     }
 
     function cancelEmployee() {
@@ -44,7 +51,7 @@
         }
 
         if (!selectedEmployee) {
-            form.resetValues();
+            // form.resetValues();
             form.option("formData", {});
             if (positionEditor) positionEditor.option("dataSource", []);
             isLoadingEmployee = false;

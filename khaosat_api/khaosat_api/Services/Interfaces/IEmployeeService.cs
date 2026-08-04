@@ -14,8 +14,10 @@ namespace khaosat_api.Services.Interfaces
         List<Department> GetDepartment();
         List<Position> GetPosition(Guid departmentId);
         List<Role> GetRoles();
-        void Create(EmployeeCreateDto dto);
+        Task Create(EmployeeCreateDto dto);
         void Update(Guid id, EmployeeUpdateDto dto);
         void Delete(Guid id);
+        Task<bool> CheckEmailExistsAsync(string email);
+        Task<bool> CheckEmployeeCodeExistsAsync(string employeeCode);
     }
 }

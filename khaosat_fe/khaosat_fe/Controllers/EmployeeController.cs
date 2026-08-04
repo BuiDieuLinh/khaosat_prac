@@ -80,7 +80,9 @@ namespace khaosat_fe.Controllers
                 {
                     return Ok();
                 }
-                return BadRequest("Thêm nhân sự thất bại");
+                var error = await response.Content.ReadAsStringAsync();
+
+                return BadRequest(error);
             }
             catch (Exception ex)
             {
@@ -126,6 +128,69 @@ namespace khaosat_fe.Controllers
             catch (Exception ex)
             {
                 return BadRequest(ex.Message);
+            }
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> CheckEmailExists(string email, string? employeeCode)
+        {
+            AttachBearerToken();
+            
+
+            if (string.IsNullOrWhiteSpace(email))
+            {
+                return Json(true);
+            }
+
+            try
+            {
+                var encodedEmail = Uri.EscapeDataString(email);
+
+                var exists = await _httpClient.GetFromJsonAsync<bool>(
+                     $"api/employee/check-email-exists?email={encodedEmail}&employeeCode={employeeCode}"
+                );
+
+                if (exists)
+                {
+                    return Json("Email đã được đăng ký");
+                }
+
+                return Json(true);
+            }
+            catch (Exception ex)
+            {
+                return Json($"Có lỗi xảy ra: {ex.Message}");
+            }
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> CheckEmployeeCodeExists(string employeeCode)
+        {
+            AttachBearerToken();
+
+            if (string.IsNullOrWhiteSpace(employeeCode))
+            {
+                return Json(true);
+            }
+
+            try
+            {
+                var encodedCode = Uri.EscapeDataString(employeeCode);
+
+                var exists = await _httpClient.GetFromJsonAsync<bool>(
+                     $"api/employee/check-employeeCode-exists?employeeCode={encodedCode}"
+                );
+
+                if (exists)
+                {
+                    return Json("Mã nhân viên đã tồn tại");
+                }
+
+                return Json(true);
+            }
+            catch (Exception ex)
+            {
+                return Json($"Có lỗi xảy ra: {ex.Message}");
             }
         }
     }

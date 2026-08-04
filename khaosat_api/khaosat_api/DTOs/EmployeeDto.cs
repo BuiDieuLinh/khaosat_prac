@@ -1,4 +1,6 @@
 using khaosat_api.Models;
+using khaosat_fe.Validation;
+using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
 
@@ -28,8 +30,13 @@ namespace khaosat_api.DTOs
 
     public class EmployeeCreateDto
     {
+        [EmployeeValidation.EmployeeCode]
         public string EmployeeCode { get; set; } = string.Empty;
+
+        [EmployeeValidation.FullName]
         public string FullName { get; set; } = string.Empty;
+
+        [EmployeeValidation.Email("oos.com.vn")]
         public string Email { get; set; } = string.Empty;
         public string? Password { get; set; }
         public bool IsActive { get; set; } = true;
