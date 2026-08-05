@@ -19,5 +19,7 @@ namespace khaosat_api.Services.Interfaces
         void Delete(Guid id);
         Task<bool> CheckEmailExistsAsync(string email);
         Task<bool> CheckEmployeeCodeExistsAsync(string employeeCode);
+
+        Task<EmployeeResponse?> GetByIdAsync(Guid guid);
     }
 }

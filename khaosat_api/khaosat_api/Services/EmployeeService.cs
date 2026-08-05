@@ -29,17 +29,25 @@ namespace khaosat_api.Services
                 employee = _repository.GetByEmployeeCode(dto.Username);
             }
 
-            if (employee == null || !employee.IsActive)
+            if (employee == null)
             {
-                return null;
+                throw new InvalidOperationException("Tài khoản không tồn tại trong hệ thống.");
+            }
+
+            if (!employee.IsActive)
+            {
+                throw new InvalidOperationException("Tài khoản của bạn đã bị ngưng hoạt động (Inactive). Vui lòng liên hệ Quản trị viên.");
             }
 
             if (!PasswordHasher.Verify(dto.Password, employee.PasswordHash))
             {
-                return null;
+                throw new InvalidOperationException("Tài khoản hoặc mật khẩu không chính xác.");
             }
 
-            string token = GenerateJwtToken(employee);
+            var userRoles = _repository.GetRolesByEmployeeId(employee.Id);
+            var roleNames = userRoles.Select(r => r.RoleName).ToList();
+
+            string token = GenerateJwtToken(employee, roleNames);
 
             return new AuthResponseDto
             {
@@ -47,7 +55,9 @@ namespace khaosat_api.Services
                 EmployeeCode = employee.EmployeeCode,
                 FullName = employee.FullName,
                 Email = employee.Email,
-                Token = token
+                Token = token,
+                PermissionVersion = employee.PermissionVersion.ToString(),
+                Roles = roleNames
             };
         }
 
@@ -73,7 +83,7 @@ namespace khaosat_api.Services
             return true;
         }
 
-        private string GenerateJwtToken(Employee employee)
+        private string GenerateJwtToken(Employee employee, List<string> roles)
         {
             var secretKey = _configuration["Jwt:Secret"] ?? "SuperSecretKeyMustBeAtLeast32BytesLong1234567890!";
             var issuer = _configuration["Jwt:Issuer"] ?? "khaosat_api";
@@ -83,18 +93,27 @@ namespace khaosat_api.Services
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey));
             var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
-            var claims = new[]
+            var claimsList = new List<Claim>
             {
                 new Claim(ClaimTypes.NameIdentifier, employee.Id.ToString()),
                 new Claim(ClaimTypes.Name, employee.FullName),
                 new Claim(ClaimTypes.Email, employee.Email),
-                new Claim(ClaimTypes.UserData, employee.EmployeeCode)
+                new Claim(ClaimTypes.UserData, employee.EmployeeCode),
+                new Claim("PermissionVersion", employee.PermissionVersion.ToString())
             };
+
+            if (roles != null)
+            {
+                foreach (var role in roles)
+                {
+                    claimsList.Add(new Claim(ClaimTypes.Role, role));
+                }
+            }
 
             var token = new JwtSecurityToken(
                 issuer: issuer,
                 audience: audience,
-                claims: claims,
+                claims: claimsList,
                 expires: DateTime.Now.AddMinutes(expiryInMinutes),
                 signingCredentials: credentials);
 
@@ -124,6 +143,11 @@ namespace khaosat_api.Services
                 Roles = e.Roles ?? new List<Role>(),
                 RoleIds = e.RoleIds ?? new List<Guid>()
             }).ToList();
+        }
+
+        public Task<EmployeeResponse?> GetByIdAsync(Guid guid)
+        {
+            return _repository.GetByIdAsync(guid);
         }
 
         public List<Department> GetDepartment()

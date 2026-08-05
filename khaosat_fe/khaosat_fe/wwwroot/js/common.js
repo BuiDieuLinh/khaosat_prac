@@ -57,7 +57,15 @@ window.Common.Utils = {
             ajaxConfig.data = payload !== undefined && payload !== null ? JSON.stringify(payload) : null;
         }
 
-        return $.ajax(ajaxConfig);
+        return $.ajax(ajaxConfig).fail(function(xhr, status, error) {
+            if (xhr.status === 401) {
+                location.href = "/401";
+            }
+
+            if (xhr.status === 403) {
+                location.href = "/403";
+            }
+        });
     }
 };
 

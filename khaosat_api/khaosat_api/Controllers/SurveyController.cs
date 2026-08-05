@@ -64,6 +64,7 @@ namespace khaosat_api.Controllers
             }
         }
 
+        [Authorize(Roles = "Admin,Quản lý")]
         [HttpPost("create-nested")]
         public IActionResult CreateNested(SurveyCreateNestedDto dto)
         {
@@ -75,6 +76,7 @@ namespace khaosat_api.Controllers
             return Ok(new { message = "Nested survey created successfully" });
         }
 
+        [Authorize(Roles = "Admin,Quản lý")]
         [HttpPut("{id}")]
         public IActionResult Update(Guid id, SurveyCreateNestedDto dto)
         {

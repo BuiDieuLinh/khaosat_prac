@@ -1,0 +1,104 @@
+﻿@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+
+<html lang="vi">
+<head>
+
+    <meta charset="utf-8" />
+
+    <title>401 - Unauthorized</title>
+
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+
+    <style>
+
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+                font-family: "Segoe UI";
+            }
+
+            body {
+                height: 100vh;
+                background: #f5f7fa;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+            }
+
+            .wrapper {
+                text-align: center;
+                max-width: 650px;
+                padding: 40px;
+            }
+
+            .icon {
+                font-size: 120px;
+                color: #0d6efd;
+                margin-bottom: 30px;
+            }
+
+            .code {
+                font-size: 90px;
+                font-weight: 700;
+                color: #1f2937;
+            }
+
+            h2 {
+                margin: 20px 0 15px;
+                color: #374151;
+            }
+
+            p {
+                color: #6b7280;
+                line-height: 1.7;
+                margin-bottom: 35px;
+            }
+
+            .btn {
+                display: inline-block;
+                padding: 14px 30px;
+                border-radius: 10px;
+                text-decoration: none;
+                background: #0d6efd;
+                color: white;
+                transition: .2s;
+                font-weight: 600;
+            }
+
+                .btn:hover {
+                    background: #0b5ed7;
+                }
+
+    </style>
+
+</head>
+
+<body>
+
+    <div class="wrapper">
+
+        <i class="fa-solid fa-user-lock icon"></i>
+
+        <div class="code">401</div>
+
+        <h2>Phiên đăng nhập đã hết hạn</h2>
+
+        <p>
+            Phiên làm việc của bạn đã kết thúc hoặc bạn chưa đăng nhập.
+            Vui lòng đăng nhập lại để tiếp tục sử dụng hệ thống.
+        </p>
+
+        <a href="/Auth/Login" class="btn">
+            Đăng nhập lại
+        </a>
+
+    </div>
+
+</body>
+</html>

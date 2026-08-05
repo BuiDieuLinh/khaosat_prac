@@ -15,14 +15,17 @@
         <h1 class="fw-bold text-dark mb-1">@ViewData["Title"]</h1>
         <p class="text-muted mb-0">Vui lòng chọn khảo sát khả dụng bên dưới để thực hiện.</p>
     </div>
-    <div>
-        @(Html.DevExtreme().Button()
-            .Text("Tạo khảo sát mới")
-            .Icon("add")
-            .Type(ButtonType.Default)
-            .OnClick("function() { window.location.href = '" + Url.Action("Create", "Survey") + "'; }")
-        )
-    </div>
+    @if (User.IsInRole("Admin") || User.IsInRole("Quản lý"))
+    {
+        <div>
+            @(Html.DevExtreme().Button()
+                .Text("Tạo khảo sát mới")
+                .Icon("add")
+                .Type(ButtonType.Default)
+                .OnClick("function() { window.location.href = '" + Url.Action("Create", "Survey") + "'; }")
+            )
+        </div>
+    }
 </div>
 
 @(Html.DevExtreme().CardView<khaosat_fe.Models.SurveyViewModel>()
@@ -69,9 +72,12 @@
                     <a class="btn btn-outline-primary px-3 py-2 btn-sm fw-semibold survey-btn-pill <%- card.data.Status != 1 ? 'disabled' : '' %>" href="/Survey/Detail/<%- card.data.Id %>" style="font-size: 0.85rem;">
                         <i class="dx-icon-eyeopen"></i> Làm khảo sát
                     </a>
-                    <a class="btn btn-outline-secondary px-2 py-2 btn-sm survey-btn-pill <%- card.data.StartDate && new Date(card.data.StartDate) <= new Date() ? 'disabled' : '' %>" href="/Survey/Edit/<%- card.data.Id %>" title="Sửa">
-                        <i class="dx-icon-edit"></i>
-                    </a>
+                    @if (User.IsInRole("Admin") || User.IsInRole("Quản lý"))
+                    {
+                        <a class="btn btn-outline-secondary px-2 py-2 btn-sm survey-btn-pill <%- card.data.StartDate && new Date(card.data.StartDate) <= new Date() ? 'disabled' : '' %>" href="/Survey/Edit/<%- card.data.Id %>" title="Sửa">
+                            <i class="dx-icon-edit"></i>
+                        </a>
+                    }
                 </div>
             </div>
         </div>

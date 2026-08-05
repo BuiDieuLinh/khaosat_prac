@@ -14,10 +14,12 @@ namespace khaosat_api.Repositories.Interfaces
         List<Department> GetDepartment();
         List<Position> GetPosition(Guid departmentId);
         List<Role> GetRoles();
+        List<Role> GetRolesByEmployeeId(Guid employeeId);
         void Create(Employee employee, List<Guid> roleIds);
         void Update(Employee employee, List<Guid> roleIds);
         void Delete(Guid id);
         Task<bool> CheckEmailExistsAsync(string email);
         Task<bool> CheckEmployeeCodeExistsAsync(string employeeCode);
+        Task<EmployeeResponse?> GetByIdAsync(Guid guid);
     }
 }

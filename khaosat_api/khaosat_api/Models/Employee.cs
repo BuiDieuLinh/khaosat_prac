@@ -17,6 +17,7 @@ namespace khaosat_api.Models
 
         public Guid? PositionId { get; set; }
         public Guid? DepartmentId { get; set; }
+        public Guid? PermissionVersion { get; set; }
     }
 
     public class EmployeeResponse
@@ -51,6 +52,7 @@ namespace khaosat_api.Models
         public string RoleNames => string.Join(", ", Roles.Select(r => r.RoleName));
 
         public List<Guid> RoleIds => Roles.Select(r => r.Id).ToList();
+        public Guid? PermissionVersion { get; set; }
     }
 
     public class Department

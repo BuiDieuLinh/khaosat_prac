@@ -3,10 +3,14 @@ using khaosat_api.Repositories;
 using khaosat_api.Repositories.Interfaces;
 using khaosat_api.Services;
 using khaosat_api.Services.Interfaces;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
-using System.Text;
 using Microsoft.OpenApi.Models;
+using System.Security.Claims;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -51,6 +55,16 @@ builder.Services.AddSwaggerGen(options =>
     });
 });
 
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll", policy =>
+    {
+        policy.AllowAnyOrigin()
+              .AllowAnyHeader()
+              .AllowAnyMethod();
+    });
+});
+
 builder.Services.AddScoped<SqlConnectionFactory>();
 
 // Repositories
@@ -83,6 +97,46 @@ builder.Services.AddAuthentication(options =>
         ValidIssuer = builder.Configuration["Jwt:Issuer"] ?? "khaosat_api",
         ValidAudience = builder.Configuration["Jwt:Audience"] ?? "khaosat_fe",
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey))
+    };
+    options.Events = new JwtBearerEvents
+    {
+        OnTokenValidated = async context =>
+        {
+            var userId = context.Principal?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var tokenPermissionVersion = context.Principal?.FindFirst("PermissionVersion")?.Value;
+
+            if (string.IsNullOrEmpty(userId) || string.IsNullOrEmpty(tokenPermissionVersion))
+            {
+                context.Response.Headers["X-Auth-Reason"] = "InvalidToken";
+                context.Fail("Token không hợp lệ.");
+                return;
+            }
+
+            var employeeRepository = context.HttpContext.RequestServices.GetRequiredService<IEmployeeRepository>();
+            var dbPermissionVersion = await employeeRepository.GetByIdAsync(Guid.Parse(userId));
+
+            if (dbPermissionVersion == null || !dbPermissionVersion.PermissionVersion.HasValue)
+            {
+                context.Response.Headers["X-Auth-Reason"] = "UserNotFound";
+                context.Fail("Người dùng không tồn tại hoặc thông tin phân quyền chưa khởi tạo.");
+                return;
+            }
+
+            if (dbPermissionVersion.PermissionVersion.Value.ToString() != tokenPermissionVersion)
+            {
+                context.Response.Headers["X-Auth-Reason"] = "PermissionChanged";
+                context.Fail("Quyền đã thay đổi. Vui lòng đăng nhập lại.");
+                return;
+            }
+        },
+        OnChallenge = context =>
+        {
+            if (!context.Response.Headers.ContainsKey("X-Auth-Reason"))
+            {
+                context.Response.Headers["X-Auth-Reason"] = "TokenExpired";
+            }
+            return Task.CompletedTask;
+        }
     };
 });
 

@@ -25,6 +25,14 @@ namespace khaosat_api.Controllers
             return Ok(employees);
         }
 
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetById(Guid id)
+        {
+            var employees = await _employeeService.GetByIdAsync(id);
+
+            return Ok(employees);
+        }
+
         [HttpGet("roles")]
         public IActionResult GetRoles()
         {

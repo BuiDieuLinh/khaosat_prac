@@ -22,16 +22,18 @@ namespace khaosat_api.Controllers
         {
             if (dto == null || string.IsNullOrEmpty(dto.Username) || string.IsNullOrEmpty(dto.Password))
             {
-                return BadRequest(new { message = "Username and Password are required." });
+                return BadRequest(new { message = "Vui lòng nhập đầy đủ Username và Password." });
             }
 
-            var response = _employeeService.Login(dto);
-            if (response == null)
+            try
             {
-                return Unauthorized(new { message = "Tài khoản hoặc mật khẩu không chính xác." });
+                var response = _employeeService.Login(dto);
+                return Ok(response);
             }
-
-            return Ok(response);
+            catch (InvalidOperationException ex)
+            {
+                return Unauthorized(new { message = ex.Message });
+            }
         }
 
         [HttpPost("register")]

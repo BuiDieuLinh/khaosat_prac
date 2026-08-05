@@ -37,24 +37,32 @@
                                 </a>
                             </li>
                             <li class="nav-item">
-                            <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Survey" ? "active" : "")" asp-area="" asp-controller="Survey" asp-action="Index">
+                                <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Survey" ? "active" : "")" asp-area="" asp-controller="Survey" asp-action="Index">
                                     <i class="dx-icon-selectall me-1 small"></i> Danh sách khảo sát
                                 </a>
                             </li>
-                            <li class="nav-item">
-                                <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Employee" ? "active" : "")" asp-area="" asp-controller="Employee" asp-action="Index">
-                                    <i class="dx-icon-user me-1 small"></i> Nhân sự
-                                </a>
-                            </li>
+                            @if (User.IsInRole("Admin") || User.IsInRole("Quản lý"))
+                            {
+                                <li class="nav-item">
+                                    <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Employee" ? "active" : "")" asp-area="" asp-controller="Employee" asp-action="Index">
+                                        <i class="dx-icon-group me-1 small"></i> Quản lý Nhân sự
+                                    </a>
+                                </li>
+                            }
                         </ul>
                         <div class="d-flex align-items-center gap-3">
                             @if (User.Identity?.IsAuthenticated == true)
                             {
+                                var userRoles = User.FindAll(System.Security.Claims.ClaimTypes.Role).Select(c => c.Value).ToList();
                                 <div class="text-end me-1">
-                                    <span class="text-muted d-block small" style="font-size: 0.75rem; line-height: 1;">Tài khoản</span>
-                                    <span class="text-dark fw-semibold small" style="font-size: 0.85rem;">@User.Identity.Name</span>
+                                    <div class="d-flex align-items-center justify-content-end gap-1">
+                                        <span class="text-dark fw-semibold small" style="font-size: 0.85rem;">@User.Identity.Name</span>
+                                    </div>
+                                    <span class="text-muted d-block small" style="font-size: 0.73rem; line-height: 1.2;">
+                                        Quyền: @(userRoles.Any() ? string.Join(" • ", userRoles) : "Nhân viên")
+                                    </span>
                                 </div>
-                                <a class="btn btn-outline-danger btn-sm d-flex align-items-center gap-1" asp-controller="Auth" asp-action="Logout">
+                                <a class="btn btn-outline-danger btn-sm d-flex align-items-center gap-1 ms-1" asp-controller="Auth" asp-action="Logout">
                                     <i class="dx-icon-runner small"></i> Đăng xuất
                                 </a>
                             }
@@ -87,10 +95,10 @@
     <script>
         $(document).ajaxError(function (event, jqXHR, ajaxSettings, thrownError) {
         if (jqXHR.status === 401) {
-        window.location.href = '@Url.Action("Login", "Auth")';
-    }
-    });
-</script>
+                    window.location.href = '@Url.Action("Login", "Auth")';
+            }
+        });
+    </script>
 @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

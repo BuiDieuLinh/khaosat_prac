@@ -48,8 +48,8 @@ namespace khaosat_fe.Controllers
             try
             {
                 var surveys = await _httpClient.GetFromJsonAsync<List<SurveyViewModel>>("api/survey");
-                return Json(surveys);
-            }
+                    return Json(surveys);
+                }
             catch
             {
                 return Json(new List<SurveyViewModel>());
@@ -62,8 +62,8 @@ namespace khaosat_fe.Controllers
             try
             {
                 var detail = await _httpClient.GetFromJsonAsync<SurveyDetailViewModel>($"api/survey/{id}");
-                return View(detail);
-            }
+                    return View(detail);
+                }
             catch
             {
                 return RedirectToAction("Index");
@@ -106,12 +106,14 @@ namespace khaosat_fe.Controllers
         }
 
         [HttpGet]
+        [Authorize(Roles = "Admin,Quản lý")]
         public IActionResult Create()
         {
             return View();
         }
 
         [HttpPost]
+        [Authorize(Roles = "Admin,Quản lý")]
         public async Task<IActionResult> CreateNested([FromBody] SurveyCreateNestedViewModel model)
         {
             if (!ModelState.IsValid)
@@ -137,26 +139,27 @@ namespace khaosat_fe.Controllers
         }
 
         [HttpGet]
+        [Authorize(Roles = "Admin,Quản lý")]
         public async Task<IActionResult> Edit(Guid id)
         {
             AttachBearerToken();
             try
             {
                 var detail = await _httpClient.GetFromJsonAsync<SurveyDetailViewModel>($"api/survey/{id}");
-                if (detail == null)
-                {
-                    TempData["ErrorMessage"] = "Không tìm thấy khảo sát.";
-                    return RedirectToAction("Index");
-                }
+                    if (detail == null)
+                    {
+                        TempData["ErrorMessage"] = "Không tìm thấy khảo sát.";
+                        return RedirectToAction("Index");
+                    }
 
-                if (detail.StartDate.HasValue && detail.StartDate.Value <= DateTime.Now)
-                {
-                    TempData["ErrorMessage"] = "Không thể chỉnh sửa khảo sát đã công khai (sau ngày bắt đầu).";
-                    return RedirectToAction("Index");
-                }
+                    if (detail.StartDate.HasValue && detail.StartDate.Value <= DateTime.Now)
+                    {
+                        TempData["ErrorMessage"] = "Không thể chỉnh sửa khảo sát đã công khai (sau ngày bắt đầu).";
+                        return RedirectToAction("Index");
+                    }
 
-                return View(detail);
-            }
+                    return View(detail);
+                }
             catch
             {
                 TempData["ErrorMessage"] = "Đã xảy ra lỗi khi lấy thông tin khảo sát.";
@@ -165,6 +168,7 @@ namespace khaosat_fe.Controllers
         }
 
         [HttpPut]
+        [Authorize(Roles = "Admin,Quản lý")]
         public async Task<IActionResult> UpdateNested(Guid id, [FromBody] SurveyCreateNestedViewModel model)
         {
             if (!ModelState.IsValid)

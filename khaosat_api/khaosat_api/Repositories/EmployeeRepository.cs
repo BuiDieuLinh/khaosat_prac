@@ -64,7 +64,8 @@ namespace khaosat_api.Repositories
                     Email,
                     PasswordHash,
                     IsActive,
-                    CreatedDate
+                    CreatedDate,
+                    PermissionVersion
                 )
                 VALUES
                 (
@@ -74,7 +75,8 @@ namespace khaosat_api.Repositories
                     @Email,
                     @PasswordHash,
                     @IsActive,
-                    @CreatedDate
+                    @CreatedDate,
+                    @PermissionVersion
                 )";
 
             using var cmd = new SqlCommand(sql, conn);
@@ -85,6 +87,7 @@ namespace khaosat_api.Repositories
             cmd.Parameters.AddWithValue("@PasswordHash", employee.PasswordHash);
             cmd.Parameters.AddWithValue("@IsActive", employee.IsActive);
             cmd.Parameters.AddWithValue("@CreatedDate", employee.CreatedDate);
+            cmd.Parameters.AddWithValue("@PermissionVersion", employee.PermissionVersion ?? Guid.NewGuid());
 
             cmd.ExecuteNonQuery();
         }
@@ -119,7 +122,8 @@ namespace khaosat_api.Repositories
                 Email = reader["Email"].ToString()!,
                 PasswordHash = reader["PasswordHash"].ToString()!,
                 IsActive = Convert.ToBoolean(reader["IsActive"]),
-                CreatedDate = Convert.ToDateTime(reader["CreatedDate"])
+                CreatedDate = Convert.ToDateTime(reader["CreatedDate"]),
+                PermissionVersion = Guid.Parse(reader["PermissionVersion"].ToString()!),
             };
         }
 
@@ -202,6 +206,97 @@ namespace khaosat_api.Repositories
             return employees.Values.ToList();
         }
 
+        public async Task<EmployeeResponse?> GetByIdAsync(Guid id)
+        {
+            using var conn = _factory.Create();
+            await conn.OpenAsync();
+
+            const string sql = @"
+                SELECT
+                    e.Id,
+                    e.EmployeeCode,
+                    e.FullName,
+                    e.Email,
+                    e.IsActive,
+                    e.CreatedDate,
+                    e.PermissionVersion,
+
+                    p.Id AS PositionId,
+                    p.PositionName,
+                    p.PositionCode,
+
+                    d.Id AS DepartmentId,
+                    d.DepartmentName,
+                    d.DepartmentCode,
+
+                    r.Id AS RoleId,
+                    r.RoleName
+                FROM Employee e
+                LEFT JOIN Position p
+                    ON e.PositionId = p.Id
+                LEFT JOIN Department d
+                    ON p.DepartmentId = d.Id
+                LEFT JOIN UserRole ur
+                    ON e.Id = ur.EmployeeId
+                LEFT JOIN Role r
+                    ON ur.RoleId = r.Id
+                WHERE e.Id = @Id";
+
+            using var cmd = new SqlCommand(sql, conn);
+            cmd.Parameters.AddWithValue("@Id", id);
+
+            using var reader = await cmd.ExecuteReaderAsync();
+
+            EmployeeResponse? employee = null;
+
+            while (await reader.ReadAsync())
+            {
+                if (employee == null)
+                {
+                    employee = new EmployeeResponse
+                    {
+                        Id = (Guid)reader["Id"],
+                        EmployeeCode = reader["EmployeeCode"].ToString()!,
+                        FullName = reader["FullName"].ToString()!,
+                        Email = reader["Email"].ToString()!,
+                        IsActive = Convert.ToBoolean(reader["IsActive"]),
+                        CreatedDate = Convert.ToDateTime(reader["CreatedDate"]),
+
+                        PositionId = reader["PositionId"] != DBNull.Value
+                            ? (Guid)reader["PositionId"]
+                            : Guid.Empty,
+
+                        PositionCode = reader["PositionCode"]?.ToString() ?? "",
+                        PositionName = reader["PositionName"]?.ToString() ?? "",
+
+                        DepartmentId = reader["DepartmentId"] != DBNull.Value
+                            ? (Guid)reader["DepartmentId"]
+                            : null,
+
+                        DepartmentCode = reader["DepartmentCode"]?.ToString() ?? "",
+                        DepartmentName = reader["DepartmentName"]?.ToString() ?? "",
+
+                        // nếu có cột này
+                        PermissionVersion = reader["PermissionVersion"] != DBNull.Value
+                            ? (Guid)reader["PermissionVersion"]
+                            : Guid.Empty,
+
+                        Roles = new List<Role>()
+                    };
+                }
+
+                if (reader["RoleId"] != DBNull.Value)
+                {
+                    employee.Roles.Add(new Role
+                    {
+                        Id = (Guid)reader["RoleId"],
+                        RoleName = reader["RoleName"].ToString()!
+                    });
+                }
+            }
+
+            return employee;
+        }
         public List<Department> GetDepartment()
         {
             var list = new List<Department>();
@@ -283,6 +378,36 @@ namespace khaosat_api.Repositories
             return list;
         }
 
+        public List<Role> GetRolesByEmployeeId(Guid employeeId)
+        {
+            var list = new List<Role>();
+            using var conn = _factory.Create();
+            conn.Open();
+            try
+            {
+                const string sql = @"
+                    SELECT r.Id, r.RoleName
+                    FROM Role r
+                    INNER JOIN UserRole ur ON r.Id = ur.RoleId
+                    WHERE ur.EmployeeId = @EmployeeId";
+                using var cmd = new SqlCommand(sql, conn);
+                cmd.Parameters.AddWithValue("@EmployeeId", employeeId);
+                using var reader = cmd.ExecuteReader();
+                while (reader.Read())
+                {
+                    list.Add(new Role
+                    {
+                        Id = Guid.Parse(reader["Id"].ToString()!),
+                        RoleName = reader["RoleName"].ToString()!
+                    });
+                }
+            }
+            catch
+            {
+            }
+            return list;
+        }
+
         public void Create(Employee employee, List<Guid> roleIds)
         {
             using var conn = _factory.Create();
@@ -291,8 +416,8 @@ namespace khaosat_api.Repositories
             try
             {
                 const string sqlEmp = @"
-                    INSERT INTO Employee (Id, EmployeeCode, FullName, Email, PasswordHash, IsActive, PositionId, CreatedDate)
-                    VALUES (@Id, @EmployeeCode, @FullName, @Email, @PasswordHash, @IsActive, @PositionId, @CreatedDate)";
+                    INSERT INTO Employee (Id, EmployeeCode, FullName, Email, PasswordHash, IsActive, PositionId, CreatedDate, PermissionVersion)
+                    VALUES (@Id, @EmployeeCode, @FullName, @Email, @PasswordHash, @IsActive, @PositionId, @CreatedDate, @PermissionVersion)";
 
                 using (var cmd = new SqlCommand(sqlEmp, conn, tran))
                 {
@@ -304,6 +429,7 @@ namespace khaosat_api.Repositories
                     cmd.Parameters.AddWithValue("@IsActive", employee.IsActive);
                     cmd.Parameters.AddWithValue("@PositionId", (object?)employee.PositionId ?? DBNull.Value);
                     cmd.Parameters.AddWithValue("@CreatedDate", employee.CreatedDate == default ? DateTime.Now : employee.CreatedDate);
+                    cmd.Parameters.AddWithValue("@PermissionVersion", Guid.NewGuid());
                     cmd.ExecuteNonQuery();
                 }
 
@@ -340,7 +466,8 @@ namespace khaosat_api.Repositories
                         FullName = @FullName,
                         Email = @Email,
                         IsActive = @IsActive,
-                        PositionId = @PositionId
+                        PositionId = @PositionId,
+                        PermissionVersion = @PermissionVersion
                     WHERE Id = @Id";
 
                 using (var cmd = new SqlCommand(sqlEmp, conn, tran))
@@ -351,6 +478,7 @@ namespace khaosat_api.Repositories
                     cmd.Parameters.AddWithValue("@Email", employee.Email ?? "");
                     cmd.Parameters.AddWithValue("@IsActive", employee.IsActive);
                     cmd.Parameters.AddWithValue("@PositionId", (object?)employee.PositionId ?? DBNull.Value);
+                    cmd.Parameters.AddWithValue("@PermissionVersion", Guid.NewGuid());
                     cmd.ExecuteNonQuery();
                 }
 

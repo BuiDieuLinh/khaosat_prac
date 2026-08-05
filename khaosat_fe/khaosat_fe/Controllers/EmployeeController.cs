@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace khaosat_fe.Controllers
 {
-    [Authorize]
+    [Authorize(Roles = "Admin,Quản lý")]
     public class EmployeeController : Controller
     {
         private readonly HttpClient _httpClient;
@@ -45,8 +45,8 @@ namespace khaosat_fe.Controllers
             try
             {
                 var employees = await _httpClient.GetFromJsonAsync<List<EmployeeViewModel>>("api/employee");
-                return Json(employees);
-            }
+                    return Json(employees);
+                }
             catch
             {
                 return Json(new List<EmployeeViewModel>());
@@ -59,8 +59,8 @@ namespace khaosat_fe.Controllers
             try
             {
                 var roles = await _httpClient.GetFromJsonAsync<List<RoleViewModel>>("api/employee/roles");
-                return Json(roles);
-            }
+                    return Json(roles);
+                }
             catch
             {
                 return Json(new List<RoleViewModel>());

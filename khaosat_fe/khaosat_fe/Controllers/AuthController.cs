@@ -24,8 +24,22 @@ namespace khaosat_fe.Controllers
         }
 
         [HttpGet]
-        public IActionResult Login()
+        public async Task<IActionResult> Login(string? reason)
         {
+            if (!string.IsNullOrEmpty(reason))
+            {
+                await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+                if (reason == "PermissionChanged")
+                {
+                    ViewBag.ErrorMessage = "Quyền hạn của bạn đã bị thay đổi. Vui lòng đăng nhập lại.";
+                }
+                else if (reason == "TokenExpired")
+                {
+                    ViewBag.ErrorMessage = "Phiên làm việc đã hết hạn. Vui lòng đăng nhập lại.";
+                }
+                return View();
+            }
+
             if (User.Identity?.IsAuthenticated == true)
             {
                 return RedirectToAction("Index", "Survey");
@@ -55,8 +69,17 @@ namespace khaosat_fe.Controllers
                             new Claim(ClaimTypes.Name, authData.FullName),
                             new Claim(ClaimTypes.Email, authData.Email),
                             new Claim(ClaimTypes.UserData, authData.EmployeeCode),
-                            new Claim("Token", authData.Token) // Store JWT token in cookie
+                            new Claim("Token", authData.Token), 
+                            new Claim("PermissionVersion",authData.PermissionVersion.ToString())
                         };
+
+                        if (authData.Roles != null)
+                        {
+                            foreach (var role in authData.Roles)
+                            {
+                                claims.Add(new Claim(ClaimTypes.Role, role));
+                            }
+                        }
 
                         var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
                         var authProperties = new AuthenticationProperties
