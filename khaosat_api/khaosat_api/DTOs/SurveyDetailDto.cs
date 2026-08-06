@@ -12,8 +12,10 @@ namespace khaosat_api.DTOs
         public DateTime? StartDate { get; set; }
         public DateTime? EndDate { get; set; }
         public byte Status { get; set; }
+        public int? MaxAttempts { get; set; }
         public DateTime CreatedDate { get; set; }
         public DateTime? UpdatedDate { get; set; }
+        public List<SurveyTargetDto> Targets { get; set; } = new();
         public List<SurveyElementDetailDto> Elements { get; set; } = new();
     }
 }

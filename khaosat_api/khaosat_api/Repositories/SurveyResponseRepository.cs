@@ -93,5 +93,32 @@ namespace khaosat_api.Repositories
 
             return result;
         }
+
+        public int GetCountBySurveyAndEmployee(Guid surveyId, Guid employeeId)
+        {
+            using var conn = _factory.Create();
+            conn.Open();
+
+            const string sql = "SELECT COUNT(*) FROM SurveyResponse WHERE SurveyId = @SurveyId AND EmployeeId = @EmployeeId";
+            using var cmd = new SqlCommand(sql, conn);
+            cmd.Parameters.AddWithValue("@SurveyId", surveyId);
+            cmd.Parameters.AddWithValue("@EmployeeId", employeeId);
+
+            var count = cmd.ExecuteScalar();
+            return count != null && count != DBNull.Value ? Convert.ToInt32(count) : 0;
+        }
+
+        public int GetCountBySurveyId(Guid surveyId)
+        {
+            using var conn = _factory.Create();
+            conn.Open();
+
+            const string sql = "SELECT COUNT(*) FROM SurveyResponse WHERE SurveyId = @SurveyId";
+            using var cmd = new SqlCommand(sql, conn);
+            cmd.Parameters.AddWithValue("@SurveyId", surveyId);
+
+            var count = cmd.ExecuteScalar();
+            return count != null && count != DBNull.Value ? Convert.ToInt32(count) : 0;
+        }
     }
 }

@@ -2,6 +2,12 @@ using System.ComponentModel.DataAnnotations;
 
 namespace khaosat_fe.Models
 {
+    public class SurveyTargetViewModel
+    {
+        public int TargetType { get; set; } // 1 = Company, 2 = Department, 3 = Position, 4 = Employee
+        public Guid? TargetId { get; set; }
+    }
+
     public class SurveyViewModel
     {
         public Guid Id { get; set; }
@@ -11,6 +17,8 @@ namespace khaosat_fe.Models
         public DateTime? StartDate { get; set; }
         public DateTime? EndDate { get; set; }
         public byte Status { get; set; }
+        public int? MaxAttempts { get; set; }
+        public List<SurveyTargetViewModel> Targets { get; set; } = new();
         public int TotalResponses { get; set; }
         public int CompletedCount { get; set; }
         public int IncompleteCount { get; set; }
@@ -26,6 +34,8 @@ namespace khaosat_fe.Models
         public DateTime? StartDate { get; set; }
         public DateTime? EndDate { get; set; }
         public byte Status { get; set; }
+        public int? MaxAttempts { get; set; }
+        public List<SurveyTargetViewModel> Targets { get; set; } = new();
         public List<SurveyElementDetailViewModel> Elements { get; set; } = new();
     }
 
@@ -71,6 +81,9 @@ namespace khaosat_fe.Models
         public string? Description { get; set; }
         public DateTime StartDate { get; set; }
         public DateTime? EndDate { get; set; }
+        public byte Status { get; set; } = 1;
+        public int? MaxAttempts { get; set; }
+        public List<SurveyTargetViewModel> Targets { get; set; } = new();
 
         public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
         {
@@ -82,7 +95,6 @@ namespace khaosat_fe.Models
             }
         }
 
-        public byte Status { get; set; } = 1;
         public List<SurveyElementCreateNestedViewModel> Elements { get; set; } = new();
     }
 

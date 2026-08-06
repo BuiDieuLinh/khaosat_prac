@@ -21,6 +21,11 @@ namespace khaosat_api.DTOs
         public DateTime? EndDate { get; set; }
 
         public byte Status { get; set; } = 1;
+
+        public int? MaxAttempts { get; set; }
+
+        public List<SurveyTargetDto> Targets { get; set; } = new();
+
         public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
         {
             if (EndDate < StartDate)

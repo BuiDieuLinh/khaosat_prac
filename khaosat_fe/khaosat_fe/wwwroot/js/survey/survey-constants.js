@@ -5,6 +5,7 @@
 
     Survey.Constants = {
         selector: {
+            cardSurveys: "#cardSurveys",
             surveyCode: "#surveyCode",
             surveyName: "#surveyName",
             surveyDescription: "#surveyDescription",

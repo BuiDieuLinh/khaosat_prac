@@ -29,6 +29,7 @@ namespace khaosat_api.Models
             }
         }
         public byte Status { get; set; }
+        public int? MaxAttempts { get; set; }
         public DateTime CreatedDate { get; set; }
         public DateTime? UpdatedDate { get; set; }
     }

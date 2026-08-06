@@ -74,6 +74,7 @@ builder.Services.AddScoped<ISurveyElementOptionRepository, SurveyElementOptionRe
 builder.Services.AddScoped<ISurveyResponseRepository, SurveyResponseRepository>();
 builder.Services.AddScoped<ISurveyAnswerRepository, SurveyAnswerRepository>();
 builder.Services.AddScoped<IEmployeeRepository, EmployeeRepository>();
+builder.Services.AddScoped<ISurveyTargetRepository, SurveyTargetRepository>();
 
 // Services
 builder.Services.AddScoped<ISurveyService, SurveyService>();

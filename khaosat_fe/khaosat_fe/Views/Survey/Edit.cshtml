@@ -4,305 +4,283 @@
 
 @{
     ViewData["Title"] = "Chỉnh sửa khảo sát";
+    var targetsJson = JsonSerializer.Serialize(Model.Targets ?? new List<khaosat_fe.Models.SurveyTargetViewModel>());
+    var elementsJson = JsonSerializer.Serialize(Model.Elements ?? new List<khaosat_fe.Models.SurveyElementDetailViewModel>());
+    var isWholeCompany = Model.Targets == null || !Model.Targets.Any() || Model.Targets.Any(t => t.TargetType == 1);
+    var selectedDeptIds = Model.Targets != null ? Model.Targets.Where(t => t.TargetType == 2 && t.TargetId.HasValue).Select(t => t.TargetId ?? Guid.Empty).ToList() : new List<Guid>();
+    var selectedPosIds = Model.Targets != null ? Model.Targets.Where(t => t.TargetType == 3 && t.TargetId.HasValue).Select(t => t.TargetId ?? Guid.Empty).ToList() : new List<Guid>();
 }
 
 <div class="survey-builder">
-<div class="builder-page-header mb-4">
-    <a href="@Url.Action("Index", "Survey")" class="btn btn-outline-secondary mb-3">
-        <i class="dx-icon-arrowleft"></i> Quay lại danh sách
-    </a>
-    <h1 class="fw-bold text-dark mb-1">@ViewData["Title"]</h1>
-    <p class="text-muted mb-0">Cập nhật thông tin cuộc khảo sát và điều chỉnh các tiêu chí câu hỏi bên dưới.</p>
-</div>
-
-<div class="card builder-section mb-4">
-    <div class="card-body p-4">
-        <div class="builder-section-heading">
-            <span class="builder-step">01</span>
-            <div>
-                <h5 class="card-title fw-bold mb-1">
-                    Thông tin chung khảo sát
-                </h5>
-                <p class="builder-section-description mb-0">Cập nhật phạm vi, thời gian và trạng thái phát hành của khảo sát.</p>
-            </div>
-        </div>
-
-        <div class="row g-3">
-            <div class="col-md-4">
-                <label class="form-label text-secondary small">Mã khảo sát <span class="text-danger">*</span></label>
-                @(Html.DevExtreme().TextBox()
-                .ID("surveyCode")
-                .Value(Model.Code)
-                .Placeholder("Ví dụ: KS_NV_2026")
-                )
-            </div>
-            <div class="col-md-8">
-                <label class="form-label text-secondary small">Tên khảo sát <span class="text-danger">*</span></label>
-                @(Html.DevExtreme().TextBox()
-                .ID("surveyName")
-                .Value(Model.Name)
-                .Placeholder("Nhập tiêu đề cuộc khảo sát...")
-                )
-            </div>
-            <div class="col-12">
-                <label class="form-label text-secondary small">Mô tả khảo sát</label>
-                @(Html.DevExtreme().TextArea()
-                .ID("surveyDescription")
-                .Value(Model.Description)
-                .Placeholder("Mô tả tóm tắt mục đích cuộc khảo sát...")
-                .Height(80)
-                )
-            </div>
-            <div class="col-md-4">
-                <label class="form-label text-secondary small">Ngày bắt đầu</label>
-                @(Html.DevExtreme().DateBox()
-                .ID("surveyStartDate")
-                .Value(Model.StartDate)
-                .Type(DateBoxType.DateTime)
-                .DisplayFormat("dd/MM/yyyy HH:mm")
-                .Placeholder("Chọn ngày bắt đầu")
-                )
-            </div>
-            <div class="col-md-4">
-                <label class="form-label text-secondary small">Ngày kết thúc</label>
-                @(Html.DevExtreme().DateBox()
-                .ID("surveyEndDate")
-                .Value(Model.EndDate)
-                .Type(DateBoxType.DateTime)
-                .DisplayFormat("dd/MM/yyyy HH:mm")
-                .Placeholder("Chọn ngày kết thúc")
-                )
-            </div>
-            <div class="col-md-4">
-                <label class="form-label text-secondary small">Trạng thái hoạt động</label>
-                @(Html.DevExtreme().SelectBox()
-                .ID("surveyStatus")
-                .DataSource(new[] {
-                new { Value = (byte)1, Text = "Đang hoạt động" },
-                new { Value = (byte)0, Text = "Tạm đóng" }
-                })
-                .ValueExpr("Value")
-                .DisplayExpr("Text")
-                .Value(Model.Status)
-                )
-            </div>
-            <div class="col-md-6 mt-3">
-                <label class="form-label text-secondary small">Phòng ban mục tiêu</label>
-                @(Html.DevExtreme().SelectBox()
-                .ID("surveyTargetDepartment")
-                .DataSource(d => d.Mvc()
-                    .Controller("Department")
-                    .LoadAction("GetDepartments"))
-                .ValueExpr("Id")
-                .DisplayExpr("DepartmentName")
-                .Placeholder("Chọn phòng ban mục tiêu...")
-                )
-            </div>
-            <div class="col-md-6 mt-3">
-                <label class="form-label text-secondary small">Vị trí mục tiêu</label>
-                @(Html.DevExtreme().SelectBox()
-                .ID("surveyTargetPosition")
-                .ValueExpr("Id")
-                .DisplayExpr("PositionName")
-                .Placeholder("Chọn vị trí...")
-                .Disabled(true)
-                )
-            </div>
-        </div>
+    <div class="builder-page-header mb-4">
+        <a href="@Url.Action("Index", "Survey")" class="btn btn-outline-secondary btn-sm rounded-pill mb-3">
+            <i class="dx-icon-arrowleft"></i> Quay lại danh sách
+        </a>
+        <h1 class="fw-bold text-dark mb-1">@ViewData["Title"]</h1>
+        <p class="text-muted mb-0">Cập nhật thông tin cuộc khảo sát và điều chỉnh các tiêu chí câu hỏi bên dưới.</p>
     </div>
-</div>
 
-<div class="card builder-section mb-4">
-    <div class="card-body p-4">
-        <div class="builder-section-toolbar d-flex justify-content-between align-items-center mb-4">
-            <div class="builder-section-heading mb-0">
-                <span class="builder-step">02</span>
-                <div>
-                    <h5 class="card-title fw-bold mb-1">
-                        Thiết lập tiêu chí câu hỏi
-                    </h5>
-                    <p class="builder-section-description mb-0">Thêm, sắp xếp và cấu hình câu hỏi cho người tham gia.</p>
+    <div class="wizard-stepper-container mb-4">
+        <div class="wizard-stepper">
+            <div class="wizard-step active" id="stepIndicator1" onclick="window.Survey.Wizard.goToStep(1)">
+                <div class="step-badge">1</div>
+                <div class="step-label">
+                    <span class="step-title">Đối tượng khảo sát</span>
+                    <span class="step-sub">Phạm vi gửi bài</span>
                 </div>
             </div>
-            <div class="d-flex gap-2">
-                @(Html.DevExtreme().Button()
-                .Text("Nhập từ excel")
-                .Type(ButtonType.Default)
-                .Icon("import")
-                .StylingMode(ButtonStylingMode.Outlined)
-                .OnClick("window.Survey.Event.showImportPopup")
-                )
-                @(Html.DevExtreme().Button()
-                .Text("Thêm câu hỏi mới")
-                .Type(ButtonType.Default)
-                .Icon("add")
-                .StylingMode(ButtonStylingMode.Outlined)
-                .OnClick("window.Survey.Element.addQuestion")
-                )
+            <div class="wizard-step-divider"></div>
+            <div class="wizard-step" id="stepIndicator2" onclick="window.Survey.Wizard.goToStep(2)">
+                <div class="step-badge">2</div>
+                <div class="step-label">
+                    <span class="step-title">Thông tin khảo sát</span>
+                    <span class="step-sub">Mã, Tên, Số lần làm</span>
+                </div>
             </div>
-
-        </div>
-
-        <div id="questionsContainer" class="d-flex flex-column gap-3">
-            <div id="emptyState" class="text-center py-4 text-muted">
-                <i class="dx-icon-help-outline" style="font-size: 2rem;"></i>
-                <p class="mt-2 mb-0">Chưa có câu hỏi nào được thêm. Hãy nhấn nút "Thêm câu hỏi mới" ở trên.</p>
+            <div class="wizard-step-divider"></div>
+            <div class="wizard-step" id="stepIndicator3" onclick="window.Survey.Wizard.goToStep(3)">
+                <div class="step-badge">3</div>
+                <div class="step-label">
+                    <span class="step-title">Thiết lập câu hỏi</span>
+                    <span class="step-sub">Tiêu chí & Options</span>
+                </div>
+            </div>
+            <div class="wizard-step-divider"></div>
+            <div class="wizard-step" id="stepIndicator4" onclick="window.Survey.Wizard.goToStep(4)">
+                <div class="step-badge">4</div>
+                <div class="step-label">
+                    <span class="step-title">Xem trước & Lưu</span>
+                    <span class="step-sub">Xác nhận thông tin</span>
+                </div>
             </div>
         </div>
     </div>
-</div>
 
-<div class="builder-action-bar d-flex justify-content-end mb-5">
-    @(Html.DevExtreme().Button()
-    .Text("Lưu Thay Đổi")
-    .Type(ButtonType.Default)
-    .Icon("check")
-    .Width(200)
-    .Height(45)
-    .OnClick("window.Survey.Event.saveSurvey")
-    )
+    <div class="wizard-content-step" id="wizardStep1">
+        <div class="card border-0 shadow-sm p-3 mb-4">
+            <div class="card-body">
+                <div class="step-header-card d-flex align-items-center gap-3 mb-4">
+                    <div class="step-header-icon-box">
+                        <i class="dx-icon-group fs-4"></i>
+                    </div>
+                    <div>
+                        <h5 class="fw-bold text-dark mb-1">Chọn đối tượng nhận khảo sát</h5>
+                        <p class="text-muted small mb-0">Xác định nhân sự sẽ nhận và thực hiện cuộc khảo sát này.</p>
+                    </div>
+                </div>
+
+                <div class="mb-4 p-3 bg-light rounded-3 border">
+                    <div class="d-flex align-items-center">
+                        @(Html.DevExtreme().CheckBox()
+                            .ID("isWholeCompany")
+                            .Text("Phát hành cho Toàn bộ Công ty (Whole Company)")
+                            .Value(isWholeCompany)
+                            .OnValueChanged("function(e) { window.Survey.Wizard.onWholeCompanyChanged(e); }")
+                        )
+                    </div>
+                </div>
+
+                <div class="row g-4" id="targetSpecificGroup" style="@(isWholeCompany ? "display: none;" : "")">
+                    <div class="col-md-6">
+                        <label class="form-label text-dark fw-semibold small">Chọn Phòng ban áp dụng (Department)</label>
+                        @(Html.DevExtreme().TagBox()
+                            .ID("targetDepartments")
+                            .DataSource(d => d.Mvc().Controller("Department").LoadAction("GetDepartments"))
+                            .ValueExpr("Id")
+                            .DisplayExpr("DepartmentName")
+                            .Value(selectedDeptIds)
+                            .Disabled(isWholeCompany)
+                            .Placeholder("Chọn một hoặc nhiều phòng ban...")
+                            .ShowClearButton(true)
+                            .SearchEnabled(true)
+                        )
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label text-dark fw-semibold small">Chọn Chức vụ áp dụng (Position)</label>
+                        @(Html.DevExtreme().TagBox()
+                            .ID("targetPositions")
+                            .DataSource(d => d.Mvc().Controller("Department").LoadAction("GetPositions"))
+                            .ValueExpr("Id")
+                            .DisplayExpr("PositionName")
+                            .Value(selectedPosIds)
+                            .Disabled(isWholeCompany)
+                            .Placeholder("Chọn một hoặc nhiều chức vụ...")
+                            .ShowClearButton(true)
+                            .SearchEnabled(true)
+                        )
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="wizard-content-step" id="wizardStep2" style="display: none;">
+        <div class="card border-0 shadow-sm p-3 mb-4">
+            <div class="card-body">
+                <div class="step-header-card d-flex align-items-center gap-3 mb-4">
+                    <div class="step-header-icon-box">
+                        <i class="dx-icon-info fs-4"></i>
+                    </div>
+                    <div>
+                        <h5 class="fw-bold text-dark mb-1">Cấu hình thông tin cuộc khảo sát</h5>
+                        <p class="text-muted small mb-0">Cập nhật mã, tiêu đề, thời gian diễn ra và số lần khảo sát tối đa.</p>
+                    </div>
+                </div>
+
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label text-secondary small">Mã khảo sát <span class="text-danger">*</span></label>
+                        @(Html.DevExtreme().TextBox()
+                            .ID("surveyCode")
+                            .Value(Model.Code)
+                            .Placeholder("Ví dụ: KS_NV_2026")
+                        )
+                    </div>
+                    <div class="col-md-8">
+                        <label class="form-label text-secondary small">Tên khảo sát <span class="text-danger">*</span></label>
+                        @(Html.DevExtreme().TextBox()
+                            .ID("surveyName")
+                            .Value(Model.Name)
+                            .Placeholder("Nhập tiêu đề cuộc khảo sát...")
+                        )
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label text-secondary small">Mô tả khảo sát</label>
+                        @(Html.DevExtreme().TextArea()
+                            .ID("surveyDescription")
+                            .Value(Model.Description)
+                            .Placeholder("Mô tả tóm tắt mục đích cuộc khảo sát...")
+                            .Height(80)
+                        )
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label text-secondary small">Ngày bắt đầu <span class="text-danger">*</span></label>
+                        @(Html.DevExtreme().DateBox()
+                            .ID("surveyStartDate")
+                            .Value(Model.StartDate)
+                            .Type(DateBoxType.DateTime)
+                            .DisplayFormat("dd/MM/yyyy HH:mm")
+                            .Placeholder("Chọn ngày bắt đầu")
+                        )
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label text-secondary small">Ngày kết thúc</label>
+                        @(Html.DevExtreme().DateBox()
+                            .ID("surveyEndDate")
+                            .Value(Model.EndDate)
+                            .Type(DateBoxType.DateTime)
+                            .DisplayFormat("dd/MM/yyyy HH:mm")
+                            .Placeholder("Để trống nếu không giới hạn")
+                        )
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label text-secondary small">Số lần làm tối đa (Max Attempts)</label>
+                        @(Html.DevExtreme().NumberBox()
+                            .ID("surveyMaxAttempts")
+                            .Value(Model.MaxAttempts)
+                            .Min(1)
+                            .Step(1)
+                            .Placeholder("Nhập số (VD: 1, 3) hoặc để trống = Unlimited")
+                        )
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label text-secondary small">Trạng thái phát hành</label>
+                        @(Html.DevExtreme().SelectBox()
+                            .ID("surveyStatus")
+                            .DataSource(new[] {
+                                new { Value = (byte)1, Text = "Đang mở (Published)" },
+                                new { Value = (byte)0, Text = "Lưu nháp (Draft)" }
+                            })
+                            .ValueExpr("Value")
+                            .DisplayExpr("Text")
+                            .Value(Model.Status)
+                        )
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="wizard-content-step" id="wizardStep3" style="display: none;">
+        <div class="card border-0 shadow-sm p-3 mb-4">
+            <div class="card-body">
+                <div class="step-header-card d-flex align-items-center justify-content-between mb-4">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="step-header-icon-box">
+                            <i class="dx-icon-card fs-4"></i>
+                        </div>
+                        <div>
+                            <h5 class="fw-bold text-dark mb-1">Thiết lập câu hỏi khảo sát</h5>
+                            <p class="text-muted small mb-0">Thêm, chỉnh sửa, sắp xếp các câu hỏi và tiêu chí đánh giá.</p>
+                        </div>
+                    </div>
+                    <div class="d-flex gap-2">
+                        @(Html.DevExtreme().Button()
+                            .Text("Nhập từ Excel")
+                            .Type(ButtonType.Normal)
+                            .Icon("import")
+                            .StylingMode(ButtonStylingMode.Outlined)
+                            .OnClick("window.Survey.Event.showImportPopup")
+                        )
+                        @(Html.DevExtreme().Button()
+                            .Text("Thêm câu hỏi mới")
+                            .Type(ButtonType.Default)
+                            .Icon("add")
+                            .OnClick("window.Survey.Element.addQuestion")
+                        )
+                    </div>
+                </div>
+
+                <div id="questionsContainer" class="d-flex flex-column gap-3">
+                    <div id="emptyState" class="text-center py-4 text-muted">
+                        <i class="dx-icon-help-outline fs-2"></i>
+                        <p class="mt-2 mb-0">Chưa có câu hỏi nào được thêm. Nhấn "Thêm câu hỏi mới" ở trên để khởi tạo.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="wizard-content-step" id="wizardStep4" style="display: none;">
+        <div id="previewContent"></div>
+    </div>
+
+    <div class="d-flex justify-content-between align-items-center mt-4">
+        <button type="button" class="btn btn-outline-secondary rounded-pill px-4" id="btnWizardBack" style="display: none;" onclick="window.Survey.Wizard.prevStep()">
+            <i class="dx-icon-arrowleft me-1"></i> Quay lại
+        </button>
+        <div></div>
+        <div class="d-flex gap-2">
+            <button type="button" class="btn btn-primary rounded-pill px-4" id="btnWizardNext" onclick="window.Survey.Wizard.nextStep()">
+                Tiếp tục <i class="dx-icon-arrowright ms-1"></i>
+            </button>
+            <button type="button" class="btn btn-success rounded-pill px-4" id="btnWizardSave" style="display: none;" onclick="window.Survey.Event.saveSurvey()">
+                <i class="dx-icon-save me-1"></i> Cập nhật Khảo sát
+            </button>
+        </div>
+    </div>
 </div>
 
 @(Html.DevExtreme().Toast()
-.ID("toastCreator")
-.DisplayTime(3000)
-.Width(350)
-.Position(p => p
-.My(HorizontalAlignment.Right, VerticalAlignment.Top)
-.At(HorizontalAlignment.Right, VerticalAlignment.Top)
-.Offset(-20, 20)
-)
-)
-
-@(Html.DevExtreme().Popup()
-    .ID("importExcelPopup")
-    .Title("Nhập câu hỏi từ Excel")
-    .Width(550)
-    .Height(480)
-    .Visible(false)
-    .DragEnabled(true)
-    .OnHidden("function(e) { window.Survey.Event.onImportPopupHidden(e); }")
-    .ContentTemplate(@<text>
-    <div class="alert alert-secondary small mb-3">
-        <strong>Hướng dẫn:</strong> Tải file mẫu, điền các câu hỏi và chọn tệp để nhập. Đối với câu hỏi trắc nghiệm (Radio/Checkbox), các đáp án viết dưới dạng <code>Mã: Tên hiển thị</code>, phân tách bằng dấu chấm phẩy (;). Ví dụ: <code>1: Rất tốt; 2: Bình thường</code>.
-    </div>
-
-    <div class="d-flex justify-content-between align-items-center mb-3 pb-3 border-bottom">
-        <span class="small text-muted">Bước 1: Tải cấu trúc câu hỏi mẫu</span>
-        @(Html.DevExtreme().Button()
-        .Text("Tải file mẫu (.xlsx)")
-        .Type(ButtonType.Normal)
-        .StylingMode(ButtonStylingMode.Outlined)
-        .Icon("download")
-        .OnClick("window.Survey.Event.downloadTemplate")
-        )
-    </div>
-
-    <div class="mb-3">
-        <label class="form-label small fw-bold mb-1">Bước 2: Chọn tệp Excel đã điền:</label>
-        @(Html.DevExtreme().FileUploader()
-        .ID("importExcelFile")
-        .SelectButtonText("Chọn tệp Excel")
-        .LabelText("")
-        .Accept(".xlsx, .xls")
-        .UploadMode(FileUploadMode.UseForm)
-        .OnValueChanged("function(e) { window.Survey.Event.handleExcelUpload(e); }")
-        )
-    </div>
-
-    <div class="mb-3">
-        <label class="form-label small fw-bold mb-1">Tùy chọn nhập:</label>
-        @(Html.DevExtreme().RadioGroup()
-        .ID("importMode")
-        .DataSource(new[] {
-            new { Value = "overwrite", Text = "Ghi đè danh sách cũ" },
-            new { Value = "append", Text = "Nối tiếp vào cuối" }
-        })
-        .ValueExpr("Value")
-        .DisplayExpr("Text")
-        .Value("overwrite")
-        .Layout(Orientation.Horizontal)
-        )
-    </div>
-
-    <div class="d-flex justify-content-end gap-2 mt-4 pt-3 border-top">
-        @(Html.DevExtreme().Button()
-        .Text("Hủy bỏ")
-        .Type(ButtonType.Normal)
-        .StylingMode(ButtonStylingMode.Outlined)
-        .OnClick("function() { $('#importExcelPopup').dxPopup('instance').hide(); }")
-        )
-        @(Html.DevExtreme().Button()
-        .Text("Thực hiện nhập")
-        .Type(ButtonType.Default)
-        .OnClick("window.Survey.Event.executeImport")
-        )
-    </div>
-    </text>)
+    .ID("toastCreator")
+    .DisplayTime(3000)
+    .Width(360)
+    .Position(p => p
+        .My(HorizontalAlignment.Right, VerticalAlignment.Top)
+        .At(HorizontalAlignment.Right, VerticalAlignment.Top)
+        .Offset(-20, 20)
+    )
 )
 
 <script>
     window.Survey = window.Survey || {};
+    window.Survey.surveyId = "@Model.Id";
+    window.Survey.initialElements = @Html.Raw(elementsJson);
+    window.Survey.initialTargets = @Html.Raw(targetsJson);
     window.Survey.Urls = {
         saveSurvey: "@Url.Action("UpdateNested", "Survey", new { id = Model.Id })",
         index: "@Url.Action("Index", "Survey")"
     };
-
-    $(document).ready(function() {
-        // Deserialize và dựng lại các câu hỏi cũ
-        const elementsJson = @Html.Raw(JsonSerializer.Serialize(Model.Elements));
-        if (elementsJson && elementsJson.length > 0) {
-            elementsJson.forEach(el => {
-                let config = {};
-                const configStr = el.ConfigType || el.configType;
-                try {
-                    config = JSON.parse(configStr);
-                } catch (e) { }
-
-                let isMultiSelect = config.IsMultiSelect !== undefined ? config.IsMultiSelect : (config.isMultiSelect !== undefined ? config.isMultiSelect : false);
-                const dataTypeRaw = (config.DataType || config.dataType || "TextBox").toString().toLowerCase();
-                let dataType = "TextBox";
-                
-                if (dataTypeRaw === "select") {
-                    dataType = isMultiSelect ? "Checkbox" : "Radio";
-                } else if (dataTypeRaw === "checkbox" || dataTypeRaw === "checkboxlist") {
-                    dataType = "Checkbox";
-                } else if (dataTypeRaw === "radio") {
-                    dataType = "Radio";
-                } else if (dataTypeRaw === "text" || dataTypeRaw === "textbox" || dataTypeRaw === "string") {
-                    dataType = "Textbox";
-                } else if (dataTypeRaw === "number") {
-                    dataType = "Number";
-                } else if (dataTypeRaw === "date" || dataTypeRaw === "datetime") {
-                    dataType = "Datetime";
-                } else if (dataTypeRaw === "textarea") {
-                    dataType = "Textarea";
-                }
-
-                const fieldName = el.FieldName || el.fieldName;
-                const caption = config.Caption || config.caption || fieldName;
-                const allowNull = config.AllowNull !== undefined ? config.AllowNull : config.allowNull;
-                const helper = config.Helper || config.helper || config.InputHelper || config.inputHelper || "";
-                
-                const rawOptions = el.Options || el.options;
-
-                const questionData = {
-                    fieldName: fieldName,
-                    caption: caption,
-                    dataType: dataType,
-                    required: !allowNull,
-                    helper: helper,
-                    options: rawOptions ? rawOptions.map(opt => ({
-                        value: opt.Value !== undefined ? opt.Value : opt.value,
-                        displayText: opt.DisplayText !== undefined ? opt.DisplayText : opt.displayText
-                    })) : []
-                };
-
-                window.Survey.Element.addQuestion(questionData);
-            });
-        }
-        window.Survey.Element.toggleEmptyState();
-    });
 </script>
 
 <script src="~/js/devextreme/jszip.min.js"></script>
@@ -313,4 +291,5 @@
 <script src="~/js/survey/survey-api.js" asp-append-version="true"></script>
 <script src="~/js/survey/survey-validation.js" asp-append-version="true"></script>
 <script src="~/js/survey/survey-builder.js" asp-append-version="true"></script>
+<script src="~/js/survey/survey-wizard.js" asp-append-version="true"></script>
 <script src="~/js/survey/survey-page.js" asp-append-version="true"></script>

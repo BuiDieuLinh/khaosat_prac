@@ -163,8 +163,52 @@
         toggleEmptyState();
     }
 
+    function loadInitialElements(elements) {
+        const list = elements || Survey.initialElements;
+        if (Array.isArray(list) && list.length > 0) {
+            clearQuestions();
+            list.forEach(function (el) {
+                const fieldName = getValue(el, "fieldName", "FieldName", "");
+                const rawConfig = getValue(el, "configType", "ConfigType", null);
+                let config = {};
+                if (rawConfig) {
+                    try {
+                        config = typeof rawConfig === "string" ? JSON.parse(rawConfig) : rawConfig;
+                    } catch (e) {
+                        console.error("Error parsing configType", e);
+                    }
+                }
+
+                const caption = getValue(config, "caption", "Caption", getValue(config, "label", "Label", fieldName));
+                const required = config.allowNull !== undefined ? !config.allowNull : (config.AllowNull !== undefined ? !config.AllowNull : true);
+                const helper = getValue(config, "helper", "Helper", getValue(config, "inputHelper", "InputHelper", ""));
+                let dataType = getValue(config, "dataType", "DataType", TYPE.TEXT_BOX);
+                const isMultiSelect = config.isMultiSelect !== undefined ? config.isMultiSelect : (config.IsMultiSelect !== undefined ? config.IsMultiSelect : false);
+
+                if (dataType === "Select" || dataType === TYPE.SELECT) {
+                    dataType = isMultiSelect ? TYPE.CHECKBOX : TYPE.RADIO;
+                }
+
+                const rawOptions = getValue(el, "options", "Options", []);
+                const options = Array.isArray(rawOptions) ? rawOptions.map(opt => ({
+                    value: getValue(opt, "value", "Value", typeof opt === "string" ? opt : ""),
+                    displayText: getValue(opt, "displayText", "DisplayText", getValue(opt, "value", "Value", ""))
+                })) : [];
+
+                addQuestion({
+                    fieldName: fieldName,
+                    caption: caption,
+                    dataType: dataType,
+                    required: required,
+                    helper: helper,
+                    options: options
+                });
+            });
+        }
+    }
+
     Survey.Element = Survey.Element || {};
-    Object.assign(Survey.Element, { addQuestion, removeQuestion, addOption, removeOption, clearQuestions, toggleEmptyState, gatherSurveyData: collectQuestions });
+    Object.assign(Survey.Element, { addQuestion, removeQuestion, addOption, removeOption, clearQuestions, toggleEmptyState, loadInitialElements, gatherSurveyData: collectQuestions });
 
     Survey.Builder = {
         init() {
@@ -179,6 +223,8 @@
                 if (action === "remove-question") removeQuestion($button.data("question-id"));
                 if (action === "remove-option") removeOption($button.data("option-id"));
             });
+
+            loadInitialElements();
         }
     };
 })(window, jQuery);

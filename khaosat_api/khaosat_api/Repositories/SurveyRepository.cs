@@ -14,6 +14,16 @@ namespace khaosat_api.Repositories
             _factory = factory;
         }
 
+        private static bool HasColumn(SqlDataReader reader, string columnName)
+        {
+            for (int i = 0; i < reader.FieldCount; i++)
+            {
+                if (reader.GetName(i).Equals(columnName, StringComparison.OrdinalIgnoreCase))
+                    return true;
+            }
+            return false;
+        }
+
         public List<Survey> GetAll()
         {
             var result = new List<Survey>();
@@ -35,6 +45,7 @@ namespace khaosat_api.Repositories
                     StartDate = reader["StartDate"] == DBNull.Value ? null : (DateTime?)Convert.ToDateTime(reader["StartDate"]),
                     EndDate = reader["EndDate"] == DBNull.Value ? null : (DateTime?)Convert.ToDateTime(reader["EndDate"]),
                     Status = Convert.ToByte(reader["Status"]),
+                    MaxAttempts = HasColumn(reader, "MaxAttempts") && reader["MaxAttempts"] != DBNull.Value ? Convert.ToInt32(reader["MaxAttempts"]) : null,
                     CreatedDate = Convert.ToDateTime(reader["CreatedDate"]),
                     UpdatedDate = reader["UpdatedDate"] == DBNull.Value ? null : (DateTime?)Convert.ToDateTime(reader["UpdatedDate"])
                 });
@@ -63,6 +74,7 @@ namespace khaosat_api.Repositories
                     StartDate = reader["StartDate"] == DBNull.Value ? null : (DateTime?)Convert.ToDateTime(reader["StartDate"]),
                     EndDate = reader["EndDate"] == DBNull.Value ? null : (DateTime?)Convert.ToDateTime(reader["EndDate"]),
                     Status = Convert.ToByte(reader["Status"]),
+                    MaxAttempts = HasColumn(reader, "MaxAttempts") && reader["MaxAttempts"] != DBNull.Value ? Convert.ToInt32(reader["MaxAttempts"]) : null,
                     CreatedDate = Convert.ToDateTime(reader["CreatedDate"]),
                     UpdatedDate = reader["UpdatedDate"] == DBNull.Value ? null : (DateTime?)Convert.ToDateTime(reader["UpdatedDate"])
                 };
@@ -79,27 +91,11 @@ namespace khaosat_api.Repositories
             const string sql = @"
                 INSERT INTO Survey
                 (
-                    Id,
-                    Code,
-                    Name,
-                    Description,
-                    StartDate,
-                    EndDate,
-                    Status,
-                    CreatedDate,
-                    UpdatedDate
+                    Id, Code, Name, Description, StartDate, EndDate, Status, MaxAttempts, CreatedDate, UpdatedDate
                 )
                 VALUES
                 (
-                    @Id,
-                    @Code,
-                    @Name,
-                    @Description,
-                    @StartDate,
-                    @EndDate,
-                    @Status,
-                    @CreatedDate,
-                    @UpdatedDate
+                    @Id, @Code, @Name, @Description, @StartDate, @EndDate, @Status, @MaxAttempts, @CreatedDate, @UpdatedDate
                 )";
 
             using var cmd = new SqlCommand(sql, conn);
@@ -111,6 +107,7 @@ namespace khaosat_api.Repositories
             cmd.Parameters.AddWithValue("@StartDate", (object?)survey.StartDate ?? DBNull.Value);
             cmd.Parameters.AddWithValue("@EndDate", (object?)survey.EndDate ?? DBNull.Value);
             cmd.Parameters.AddWithValue("@Status", survey.Status);
+            cmd.Parameters.AddWithValue("@MaxAttempts", (object?)survey.MaxAttempts ?? DBNull.Value);
             cmd.Parameters.AddWithValue("@CreatedDate", survey.CreatedDate);
             cmd.Parameters.AddWithValue("@UpdatedDate", (object?)survey.UpdatedDate ?? DBNull.Value);
 
@@ -144,6 +141,7 @@ namespace khaosat_api.Repositories
                     StartDate = @StartDate,
                     EndDate = @EndDate,
                     Status = @Status,
+                    MaxAttempts = @MaxAttempts,
                     UpdatedDate = @UpdatedDate
                 WHERE Id = @Id";
 
@@ -156,6 +154,7 @@ namespace khaosat_api.Repositories
             cmd.Parameters.AddWithValue("@StartDate", (object?)survey.StartDate ?? DBNull.Value);
             cmd.Parameters.AddWithValue("@EndDate", (object?)survey.EndDate ?? DBNull.Value);
             cmd.Parameters.AddWithValue("@Status", survey.Status);
+            cmd.Parameters.AddWithValue("@MaxAttempts", (object?)survey.MaxAttempts ?? DBNull.Value);
             cmd.Parameters.AddWithValue("@UpdatedDate", (object?)survey.UpdatedDate ?? DBNull.Value);
 
             cmd.ExecuteNonQuery();
@@ -165,34 +164,23 @@ namespace khaosat_api.Repositories
         {
             using var conn = _factory.Create();
             conn.Open();
-            using var transaction = conn.BeginTransaction();
 
-            try
+            const string sqlDeleteOptions = @"
+                DELETE FROM SurveyElementOption 
+                WHERE ElementId IN (SELECT Id FROM SurveyElement WHERE SurveyId = @SurveyId)";
+            using (var cmd = new SqlCommand(sqlDeleteOptions, conn))
             {
-                const string sqlDeleteOptions = @"
-                    DELETE FROM SurveyElementOption 
-                    WHERE ElementId IN (SELECT Id FROM SurveyElement WHERE SurveyId = @SurveyId)";
-                using (var cmd = new SqlCommand(sqlDeleteOptions, conn, transaction))
-                {
-                    cmd.Parameters.AddWithValue("@SurveyId", surveyId);
-                    cmd.ExecuteNonQuery();
-                }
-
-                const string sqlDeleteElements = @"
-                    DELETE FROM SurveyElement 
-                    WHERE SurveyId = @SurveyId";
-                using (var cmd = new SqlCommand(sqlDeleteElements, conn, transaction))
-                {
-                    cmd.Parameters.AddWithValue("@SurveyId", surveyId);
-                    cmd.ExecuteNonQuery();
-                }
-
-                transaction.Commit();
+                cmd.Parameters.AddWithValue("@SurveyId", surveyId);
+                cmd.ExecuteNonQuery();
             }
-            catch
+
+            const string sqlDeleteElements = @"
+                DELETE FROM SurveyElement 
+                WHERE SurveyId = @SurveyId";
+            using (var cmd = new SqlCommand(sqlDeleteElements, conn))
             {
-                transaction.Rollback();
-                throw;
+                cmd.Parameters.AddWithValue("@SurveyId", surveyId);
+                cmd.ExecuteNonQuery();
             }
         }
     }

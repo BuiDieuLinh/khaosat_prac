@@ -61,11 +61,24 @@ namespace khaosat_fe.Controllers
             AttachBearerToken();
             try
             {
-                var detail = await _httpClient.GetFromJsonAsync<SurveyDetailViewModel>($"api/survey/{id}");
-                    return View(detail);
+                var response = await _httpClient.GetAsync($"api/survey/{id}");
+                if (response.IsSuccessStatusCode)
+                {
+                    var detail = await response.Content.ReadFromJsonAsync<SurveyDetailViewModel>();
+                    if (detail != null) return View(detail);
                 }
+                else if (response.StatusCode == System.Net.HttpStatusCode.Forbidden)
+                {
+                    TempData["ErrorMessage"] = "Bạn không thuộc đối tượng tham gia cuộc khảo sát này!";
+                    return RedirectToAction("Index");
+                }
+                
+                TempData["ErrorMessage"] = "Không tìm thấy cuộc khảo sát hoặc bạn không có quyền truy cập.";
+                return RedirectToAction("Index");
+            }
             catch
             {
+                TempData["ErrorMessage"] = "Đã xảy ra lỗi khi lấy thông tin khảo sát.";
                 return RedirectToAction("Index");
             }
         }
@@ -80,8 +93,7 @@ namespace khaosat_fe.Controllers
 
             AttachBearerToken();
             try
-            {
-                // Ghi đè EmployeeId từ Token Claims của User đang login
+            { 
                 var userIdStr = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
                 if (Guid.TryParse(userIdStr, out Guid employeeId))
                 {
@@ -96,6 +108,18 @@ namespace khaosat_fe.Controllers
                 if (response.IsSuccessStatusCode)
                 {
                     return Ok(new { message = "Submitted successfully" });
+                }
+                if (response.StatusCode == System.Net.HttpStatusCode.Forbidden)
+                {
+                    var err = await response.Content.ReadFromJsonAsync<Dictionary<string, string>>();
+                    var msg = err != null && err.ContainsKey("message") ? err["message"] : "Bạn không thuộc đối tượng tham gia khảo sát này.";
+                    return StatusCode(403, new { message = msg });
+                }
+                if (response.StatusCode == System.Net.HttpStatusCode.Conflict)
+                {
+                    var err = await response.Content.ReadFromJsonAsync<Dictionary<string, string>>();
+                    var msg = err != null && err.ContainsKey("message") ? err["message"] : "Bạn đã hết số lần làm khảo sát";
+                    return StatusCode(409, new { message = msg });
                 }
                 return BadRequest("Failed to submit survey");
             }
@@ -146,20 +170,26 @@ namespace khaosat_fe.Controllers
             try
             {
                 var detail = await _httpClient.GetFromJsonAsync<SurveyDetailViewModel>($"api/survey/{id}");
-                    if (detail == null)
-                    {
-                        TempData["ErrorMessage"] = "Không tìm thấy khảo sát.";
-                        return RedirectToAction("Index");
-                    }
-
-                    if (detail.StartDate.HasValue && detail.StartDate.Value <= DateTime.Now)
-                    {
-                        TempData["ErrorMessage"] = "Không thể chỉnh sửa khảo sát đã công khai (sau ngày bắt đầu).";
-                        return RedirectToAction("Index");
-                    }
-
-                    return View(detail);
+                if (detail == null)
+                {
+                    TempData["ErrorMessage"] = "Không tìm thấy khảo sát.";
+                    return RedirectToAction("Index");
                 }
+
+                if (detail.Status == 2)
+                {
+                    TempData["ErrorMessage"] = "Khảo sát đã được đóng.";
+                    return RedirectToAction("Index");
+                }
+
+                if (detail.Status == 1 && detail.StartDate.HasValue && detail.StartDate.Value <= DateTime.Now)
+                {
+                    TempData["ErrorMessage"] = "Khảo sát đã bắt đầu nên không thể chỉnh sửa.";
+                    return RedirectToAction("Index");
+                }
+
+                return View(detail);
+            }
             catch
             {
                 TempData["ErrorMessage"] = "Đã xảy ra lỗi khi lấy thông tin khảo sát.";
@@ -183,6 +213,49 @@ namespace khaosat_fe.Controllers
                 if (response.IsSuccessStatusCode)
                 {
                     return Ok(new { message = "Survey updated successfully" });
+                }
+                var errorMsg = await response.Content.ReadAsStringAsync();
+                return BadRequest(errorMsg);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ex.Message);
+            }
+        }
+
+        [HttpPost("Survey/Clone/{id}")]
+        [Authorize(Roles = "Admin,Quản lý")]
+        public async Task<IActionResult> Clone(Guid id)
+        {
+            AttachBearerToken();
+            try
+            {
+                var response = await _httpClient.PostAsync($"api/survey/{id}/clone", null);
+                if (response.IsSuccessStatusCode)
+                {
+                    var cloned = await response.Content.ReadFromJsonAsync<SurveyViewModel>();
+                    return Ok(cloned);
+                }
+                var errorMsg = await response.Content.ReadAsStringAsync();
+                return BadRequest(errorMsg);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ex.Message);
+            }
+        }
+
+        [HttpPut("Survey/Close/{id}")]
+        [Authorize(Roles = "Admin,Quản lý")]
+        public async Task<IActionResult> Close(Guid id)
+        {
+            AttachBearerToken();
+            try
+            {
+                var response = await _httpClient.PutAsync($"api/survey/{id}/close", null);
+                if (response.IsSuccessStatusCode)
+                {
+                    return Ok(new { message = "Đã đóng khảo sát thành công." });
                 }
                 var errorMsg = await response.Content.ReadAsStringAsync();
                 return BadRequest(errorMsg);

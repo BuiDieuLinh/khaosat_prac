@@ -14,6 +14,10 @@
     function collectSurvey() {
         const startDate = Common.Utils.toLocalISOString(widgetValue(S.surveyStartDate, "dxDateBox"));
         const endDate = Common.Utils.toLocalISOString(widgetValue(S.surveyEndDate, "dxDateBox"));
+        const maxAttemptsVal = widgetValue("#surveyMaxAttempts", "dxNumberBox");
+        const maxAttempts = (maxAttemptsVal !== null && maxAttemptsVal !== undefined && maxAttemptsVal !== "") ? parseInt(maxAttemptsVal) : null;
+        const targets = Survey.Wizard ? Survey.Wizard.collectTargets() : [];
+
         return {
             code: String(widgetValue(S.surveyCode, "dxTextBox") || "").trim(),
             name: String(widgetValue(S.surveyName, "dxTextBox") || "").trim(),
@@ -21,12 +25,21 @@
             startDate,
             endDate,
             status: widgetValue(S.surveyStatus, "dxSelectBox"),
+            maxAttempts,
+            targets,
             elements: Survey.Element.gatherSurveyData()
         };
     }
 
     function saveSurvey() {
         if (isSaving) return;
+        
+        if (Survey.Wizard) {
+            if (!Survey.Wizard.validateStep(1) || !Survey.Wizard.validateStep(2) || !Survey.Wizard.validateStep(3)) {
+                return;
+            }
+        }
+
         const survey = collectSurvey();
         if (!survey.elements || !Survey.Validation.validateSurvey(survey)) return;
 
@@ -328,6 +341,130 @@
         reader.readAsArrayBuffer(selectedExcelFile);
     }
 
+    function refreshGrid() {
+        const $grid = $("#cardSurveys");
+        if (!$grid.length) return;
+
+        const instance = $grid.data("dxDataGrid") || $grid.data("dxCardView") || $grid.data("dxTileView");
+        if (instance && typeof instance.refresh === "function") {
+            instance.refresh();
+        } else {
+            window.location.reload();
+        }
+    }
+
+    function cloneSurvey(id) {
+        if (!id) return;
+        Survey.Api.cloneSurvey(id)
+            .done(function () {
+                refreshGrid();
+                Common.Utils.showToast("Đã tạo bản sao khảo sát thành công.", "success");
+            })
+            .fail(function (xhr) {
+                Common.Utils.showToast(`Lỗi khi clone khảo sát: ${Survey.Api.getErrorMessage(xhr)}`, "error");
+            });
+    }
+
+    function closeSurvey(id) {
+        if (!id) return;
+        DevExpress.ui.dialog.confirm(
+            "Sau khi đóng, khảo sát sẽ không thể tiếp tục thực hiện.", "Bạn có chắc chắn muốn đóng khảo sát này?"
+        ).done(function (result) {
+            if (!result) return;
+            Survey.Api.closeSurvey(id)
+                .done(function () {
+                    Common.Utils.showToast("Đã đóng khảo sát thành công.", "success");
+                    refreshGrid();
+                })
+                .fail(function (xhr) {
+                    Common.Utils.showToast(`Lỗi khi đóng khảo sát: ${Survey.Api.getErrorMessage(xhr)}`, "error");
+                });
+        });
+    }
+
+    function showSurveyMenu(element, id, status, isStartedVal, completedCountVal) {
+        const isClosed = status === 2;
+        const isStarted = Boolean(isStartedVal);
+        const completedCount = parseInt(completedCountVal) || 0;
+        const canEdit = !isClosed && !isStarted && completedCount === 0;
+
+        let editTooltip = "";
+        if (isClosed) {
+            editTooltip = "Khảo sát đã được đóng.";
+        } else if (completedCount > 0) {
+            editTooltip = "Khảo sát đã có người tham gia nên không thể chỉnh sửa. Vui lòng nhân bản khảo sát nếu muốn thay đổi nội dung.";
+        } else if (isStarted) {
+            editTooltip = "Khảo sát đã bắt đầu nên không thể chỉnh sửa.";
+        }
+
+        const items = [
+            {
+                text: "Edit",
+                icon: "edit",
+                disabled: !canEdit,
+                tooltip: editTooltip,
+                onClick: function () {
+                    if (canEdit) {
+                        window.location.href = "/Survey/Edit/" + id;
+                    }
+                }
+            },
+            {
+                text: "Clone Survey",
+                icon: "copy",
+                onClick: function () {
+                    cloneSurvey(id);
+                }
+            }
+        ];
+
+        if (!isClosed) {
+            items.push({
+                text: "Close Survey",
+                icon: "close",
+                danger: true,
+                onClick: function () {
+                    closeSurvey(id);
+                }
+            });
+        }
+
+        let $menu = $("#surveyContextMenuContainer");
+        if (!$menu.length) {
+            $menu = $('<div id="surveyContextMenuContainer"></div>').appendTo("body");
+        }
+
+        const menuInstance = $menu.dxContextMenu({
+            target: element,
+            showEvent: "",
+            dataSource: items,
+            width: 170,
+            itemTemplate: function (itemData) {
+                const $item = $('<div class="d-flex align-items-center gap-2 py-1 px-2"></div>');
+                if (itemData.icon) {
+                    const iconClass = itemData.danger ? "text-danger" : (itemData.disabled ? "text-muted opacity-50" : "text-primary");
+                    $item.append(`<i class="dx-icon-${itemData.icon} ${iconClass}"></i>`);
+                }
+                const textClass = itemData.danger ? "text-danger" : (itemData.disabled ? "text-muted opacity-50" : "text-dark");
+                $item.append(`<span class="${textClass} fw-medium" style="font-size: 0.88rem;">${itemData.text}</span>`);
+
+                if (itemData.disabled && itemData.tooltip) {
+                    $item.attr("title", itemData.tooltip);
+                    $item.attr("data-bs-toggle", "tooltip");
+                    $item.attr("data-bs-placement", "left");
+                }
+                return $item;
+            },
+            onItemClick: function (e) {
+                if (e.itemData && !e.itemData.disabled && typeof e.itemData.onClick === "function") {
+                    e.itemData.onClick();
+                }
+            }
+        }).dxContextMenu("instance");
+
+        menuInstance.show();
+    }
+
     Survey.Event = Survey.Event || {};
     Survey.Event.saveSurvey = saveSurvey;
     Survey.Event.submitSurvey = submitResponse;
@@ -339,11 +476,32 @@
     Survey.Event.handleExcelUpload = handleExcelUpload;
     Survey.Event.executeImport = executeImport;
     Survey.Event.onImportPopupHidden = onImportPopupHidden;
+    Survey.Event.cloneSurvey = cloneSurvey;
+    Survey.Event.closeSurvey = closeSurvey;
+    Survey.Event.showSurveyMenu = showSurveyMenu;
+
+    window.cloneSurvey = cloneSurvey;
+    window.closeSurvey = closeSurvey;
+    window.showSurveyMenu = showSurveyMenu;
 
     Survey.Page = {
         init() {
-            Survey.Builder.init();
+            if (Survey.Builder && typeof Survey.Builder.init === "function") {
+                Survey.Builder.init();
+            }
             initializeTargetPosition();
+            $('body').tooltip({
+                selector: '[data-bs-toggle="tooltip"]',
+                trigger: 'hover'
+            });
+
+            $(document).on('show.bs.dropdown', '.dropdown', function () {
+                $(this).closest('.dx-row, .dx-data-row, .dx-card, .survey-row-card').addClass('survey-dropdown-open').css('z-index', 9999);
+            });
+
+            $(document).on('hide.bs.dropdown', '.dropdown', function () {
+                $(this).closest('.dx-row, .dx-data-row, .dx-card, .survey-row-card').removeClass('survey-dropdown-open').css('z-index', '');
+            });
         }
     };
 

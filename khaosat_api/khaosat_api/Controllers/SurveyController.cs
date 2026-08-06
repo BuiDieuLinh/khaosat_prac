@@ -20,19 +20,43 @@ namespace khaosat_api.Controllers
         [HttpGet]
         public IActionResult GetSurveys()
         {
-            var surveys = _surveyService.GetSurveys();
+            Guid? currentUserId = null;
+            var userIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            if (Guid.TryParse(userIdClaim, out Guid parsedId))
+            {
+                currentUserId = parsedId;
+            }
+            var surveys = _surveyService.GetSurveys(currentUserId);
             return Ok(surveys);
         }
 
         [HttpGet("{id}")]
         public IActionResult GetSurveyDetail(Guid id)
         {
-            var survey = _surveyService.GetSurveyDetail(id);
-            if (survey == null)
+            Guid? currentUserId = null;
+            var userIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            if (Guid.TryParse(userIdClaim, out Guid parsedId))
             {
-                return NotFound(new { message = "Survey not found" });
+                currentUserId = parsedId;
             }
-            return Ok(survey);
+
+            try
+            {
+                var survey = _surveyService.GetSurveyDetail(id, currentUserId);
+                if (survey == null)
+                {
+                    return NotFound(new { message = "Survey not found" });
+                }
+                return Ok(survey);
+            }
+            catch (InvalidOperationException ex)
+            {
+                if (ex.Message == "NOT_IN_TARGET_AUDIENCE")
+                {
+                    return StatusCode(StatusCodes.Status403Forbidden, new { message = "Bạn không thuộc đối tượng tham gia khảo sát này." });
+                }
+                return BadRequest(new { message = ex.Message });
+            }
         }
 
         [HttpPost("submit")]
@@ -60,6 +84,14 @@ namespace khaosat_api.Controllers
             }
             catch (InvalidOperationException ex)
             {
+                if (ex.Message == "NOT_IN_TARGET_AUDIENCE")
+                {
+                    return StatusCode(StatusCodes.Status403Forbidden, new { message = "Bạn không thuộc đối tượng tham gia khảo sát này." });
+                }
+                if (ex.Message == "MAX_ATTEMPTS_EXCEEDED")
+                {
+                    return StatusCode(StatusCodes.Status409Conflict, new { message = "Bạn đã hết số lần làm khảo sát" });
+                }
                 return BadRequest(new { message = ex.Message });
             }
         }
@@ -89,6 +121,36 @@ namespace khaosat_api.Controllers
             {
                 _surveyService.UpdateNested(id, dto);
                 return Ok(new { message = "Survey updated successfully" });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        [Authorize(Roles = "Admin,Quản lý")]
+        [HttpPost("{id}/clone")]
+        public IActionResult Clone(Guid id)
+        {
+            try
+            {
+                var result = _surveyService.CloneSurvey(id);
+                return Ok(result);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        [Authorize(Roles = "Admin,Quản lý")]
+        [HttpPut("{id}/close")]
+        public IActionResult Close(Guid id)
+        {
+            try
+            {
+                _surveyService.CloseSurvey(id);
+                return Ok(new { message = "Đã đóng khảo sát thành công." });
             }
             catch (InvalidOperationException ex)
             {
