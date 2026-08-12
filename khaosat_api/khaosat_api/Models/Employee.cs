@@ -61,6 +61,14 @@ namespace khaosat_api.Models
         public string DepartmentName { get; set; } = string.Empty;
         public string DepartmentCode { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
+        public List<PositionReps> Positions { get; set; } = new List<PositionReps>();
+    }
+
+    public class PositionReps
+    {
+        public Guid Id { get; set; }
+        public string PositionName { get; set; } = string.Empty;
+        public string PositionCode { get; set; } = string.Empty;
     }
 
     public class Position

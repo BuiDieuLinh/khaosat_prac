@@ -7,6 +7,7 @@ namespace khaosat_api.Models
         public Guid Id { get; set; }
         public Guid SurveyId { get; set; }
         public int TargetType { get; set; } // 1 = Company, 2 = Department, 3 = Position, 4 = Employee
-        public Guid? TargetId { get; set; }
+        public Guid? DepartmentId { get; set; }
+        public Guid? PositionId { get; set; }
     }
 }

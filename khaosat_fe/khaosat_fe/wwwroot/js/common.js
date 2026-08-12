@@ -1,8 +1,8 @@
 // common.js
 window.Common = window.Common || {};
 window.Common.Utils = {
-    showToast: function(message, type, toastId) {
-        const selector = toastId ? `#${toastId}` : "#toastCreator, #toastDetail, #loginToast, #toastEmployee, #toastSurveyIndex";
+    showToast: function(message, type) {
+        const selector = "#globalToast";
         const toast = $(selector).first().dxToast("instance");
         if (toast) {
             toast.option({

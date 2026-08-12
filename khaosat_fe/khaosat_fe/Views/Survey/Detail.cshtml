@@ -193,17 +193,6 @@ ViewData["Title"] = Model.Name;
     </div>
 </div>
 
-@(Html.DevExtreme().Toast()
-.ID("toastDetail")
-.DisplayTime(3000)
-.Width(320)
-.Position(p => p
-.My(HorizontalAlignment.Right, VerticalAlignment.Top)
-.At(HorizontalAlignment.Right, VerticalAlignment.Top)
-.Offset(-20, 20)
-)
-)
-
 <script>
     window.Survey = window.Survey || {};
     window.Survey.surveyId = "@Model.Id";

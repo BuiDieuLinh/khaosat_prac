@@ -8,7 +8,7 @@ namespace khaosat_api.Controllers
     [Authorize]
     [ApiController]
     [Route("api/survey")]
-    public class SurveyController : Controller
+    public class SurveyController : BaseController
     {
         private readonly ISurveyService _surveyService;
 
@@ -20,14 +20,25 @@ namespace khaosat_api.Controllers
         [HttpGet]
         public IActionResult GetSurveys()
         {
-            Guid? currentUserId = null;
+            var userId = CurrentUserId;
             var userIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
             if (Guid.TryParse(userIdClaim, out Guid parsedId))
             {
-                currentUserId = parsedId;
+                userId = parsedId;
             }
-            var surveys = _surveyService.GetSurveys(currentUserId);
+            var surveys = _surveyService.GetSurveys(userId);
             return Ok(surveys);
+        }
+
+        [HttpGet("paged")]
+        public IActionResult GetPagedSurveys([FromQuery] SurveyFilterDto filter)
+        {
+            var userId = CurrentUserId;
+            bool isAdminOrManager = User.IsInRole("Admin") || User.IsInRole("Quản lý");
+
+            var result = _surveyService.GetSurveys(filter, userId, isAdminOrManager);
+
+            return Ok(result);
         }
 
         [HttpGet("{id}")]

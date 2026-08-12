@@ -52,9 +52,9 @@ namespace khaosat_api.Services
             foreach (var t in targets)
             {
                 if (t.TargetType == 1) return true;
-                if (t.TargetType == 2 && employee.DepartmentId.HasValue && t.TargetId == employee.DepartmentId.Value) return true;
-                if (t.TargetType == 3 && employee.PositionId.HasValue && t.TargetId == employee.PositionId.Value) return true;
-                if (t.TargetType == 4 && t.TargetId == employee.Id) return true;
+                if (t.TargetType == 2 && employee.DepartmentId.HasValue && t.DepartmentId == employee.DepartmentId.Value) return true;
+                if (t.TargetType == 3 && employee.PositionId.HasValue && t.PositionId == employee.PositionId.Value) return true;
+                //if (t.TargetType == 4 && t.DepartmentId == employee.Id) return true;
             }
 
             return false;
@@ -83,7 +83,7 @@ namespace khaosat_api.Services
 
                 var targets = _targetRepository.GetBySurveyId(x.Id);
                 var status = x.Status;
-                if (x.Status == 1 && x.EndDate.HasValue && x.EndDate.Value < DateTime.Now)
+                if (x.Status == SurveyStatus.Active && x.EndDate.HasValue && x.EndDate.Value < DateTime.Now)
                 {
                     status = 0; 
                     _repository.UpdateStatus(x.Id, 0); 
@@ -101,11 +101,11 @@ namespace khaosat_api.Services
                     Description = x.Description,
                     StartDate = x.StartDate,
                     EndDate = x.EndDate,
-                    Status = status,
+                    Status = (byte)status,
                     MaxAttempts = x.MaxAttempts,
                     CreatedDate = x.CreatedDate,
                     UpdatedDate = x.UpdatedDate,
-                    Targets = targets.Select(t => new SurveyTargetDto { TargetType = t.TargetType, TargetId = t.TargetId }).ToList(),
+                    Targets = targets.Select(t => new SurveyTargetDto { TargetType = t.TargetType, DepartmentId = t.DepartmentId, PositionId = t.PositionId}).ToList(),
                     TotalResponses = activeEmployeeCount,
                     CompletedCount = completedCount,
                     IncompleteCount = incompleteCount,
@@ -114,6 +114,69 @@ namespace khaosat_api.Services
             }
 
             return resultList;
+        }
+
+        public PagedResult<SurveyDto> GetSurveys(SurveyFilterDto filter, Guid? currentUserId = null, bool isAdminOrManager = false)
+        {
+            var targetUserId = isAdminOrManager ? null : currentUserId;
+            var pagedResult = _repository.GetSurveys(filter, targetUserId);
+
+            var activeEmployeeCount = _employeeRepository.GetActiveEmployeeCount();
+            var completedCounts = _responseRepository.GetCompletedCounts();
+
+            var resultList = new List<SurveyDto>();
+
+            foreach (var survey in pagedResult.Data)
+            {
+                var status = survey.Status;
+
+                if (status == SurveyStatus.Active && survey.EndDate.HasValue && survey.EndDate.Value < DateTime.Now)
+                {
+                    status = SurveyStatus.Closed;
+                    _repository.UpdateStatus(survey.Id, (byte)SurveyStatus.Closed);
+                }
+
+                var targets = _targetRepository.GetBySurveyId(survey.Id);
+
+                completedCounts.TryGetValue(survey.Id, out int completedCount);
+
+                int incompleteCount = Math.Max(0, activeEmployeeCount - completedCount);
+
+                double completionRate = activeEmployeeCount > 0
+                    ? Math.Round((double)completedCount / activeEmployeeCount * 100, 2)
+                    : 0;
+
+                resultList.Add(new SurveyDto
+                {
+                    Id = survey.Id,
+                    Code = survey.Code,
+                    Name = survey.Name,
+                    Description = survey.Description,
+                    StartDate = survey.StartDate,
+                    EndDate = survey.EndDate,
+                    Status = (byte)status,
+                    //StatusText = GetStatusText(status),
+                    MaxAttempts = survey.MaxAttempts,
+                    CreatedDate = survey.CreatedDate,
+                    UpdatedDate = survey.UpdatedDate,
+                    Targets = targets.Select(t => new SurveyTargetDto
+                    {
+                        TargetType = t.TargetType,
+                        DepartmentId = t.DepartmentId,
+                        PositionId = t.PositionId
+                    }).ToList(),
+                    TotalResponses = activeEmployeeCount,
+                    CompletedCount = completedCount,
+                    IncompleteCount = incompleteCount,
+                    CompletionRate = completionRate
+                });
+            }
+
+            return new PagedResult<SurveyDto>(
+                resultList,
+                pagedResult.TotalCount,
+                pagedResult.PageNumber,
+                pagedResult.PageSize);
         }
 
         public SurveyDetailDto? GetSurveyDetail(Guid id, Guid? currentUserId = null)
@@ -134,7 +197,7 @@ namespace khaosat_api.Services
             }
 
             var status = survey.Status;
-            if (survey.Status == 1 && survey.EndDate.HasValue && survey.EndDate.Value < DateTime.Now)
+            if (survey.Status == SurveyStatus.Active && survey.EndDate.HasValue && survey.EndDate.Value < DateTime.Now)
             {
                 status = 0; 
                 _repository.UpdateStatus(survey.Id, 0); 
@@ -175,11 +238,11 @@ namespace khaosat_api.Services
                 Description = survey.Description,
                 StartDate = survey.StartDate,
                 EndDate = survey.EndDate,
-                Status = status,
+                Status = (byte)status,
                 MaxAttempts = survey.MaxAttempts,
                 CreatedDate = survey.CreatedDate,
                 UpdatedDate = survey.UpdatedDate,
-                Targets = targets.Select(t => new SurveyTargetDto { TargetType = t.TargetType, TargetId = t.TargetId }).ToList(),
+                Targets = targets.Select(t => new SurveyTargetDto { TargetType = t.TargetType, DepartmentId = t.DepartmentId, PositionId = t.PositionId }).ToList(),
                 Elements = elementDetails
             };
         }
@@ -192,7 +255,7 @@ namespace khaosat_api.Services
                 throw new InvalidOperationException("Khảo sát không tồn tại.");
             }
 
-            if (survey.Status != 1 || (survey.EndDate.HasValue && survey.EndDate.Value < DateTime.Now))
+            if (survey.Status != SurveyStatus.Active || (survey.EndDate.HasValue && survey.EndDate.Value < DateTime.Now))
             {
                 throw new InvalidOperationException("Cuộc khảo sát đã kết thúc hoặc chưa phát hành.");
             }
@@ -277,7 +340,8 @@ namespace khaosat_api.Services
                         Id = Guid.NewGuid(),
                         SurveyId = surveyId,
                         TargetType = tDto.TargetType,
-                        TargetId = tDto.TargetType == 1 ? null : tDto.TargetId
+                        DepartmentId = tDto.TargetType == 1 ? null : tDto.DepartmentId,
+                        PositionId = tDto.TargetType == 1 ? null : tDto.PositionId
                     };
                     _targetRepository.Add(target);
                 }
@@ -331,7 +395,7 @@ namespace khaosat_api.Services
                 throw new InvalidOperationException("Khảo sát không tồn tại.");
             }
 
-            if (existingSurvey.Status == 2)
+            if (existingSurvey.Status == SurveyStatus.Closed)
             {
                 throw new InvalidOperationException("Khảo sát đã được đóng.");
             }
@@ -342,7 +406,7 @@ namespace khaosat_api.Services
                 throw new InvalidOperationException("Khảo sát đã có người tham gia.");
             }
 
-            if (existingSurvey.Status == 1 && existingSurvey.StartDate.HasValue && existingSurvey.StartDate.Value <= DateTime.Now)
+            if (existingSurvey.Status == SurveyStatus.Active && existingSurvey.StartDate.HasValue && existingSurvey.StartDate.Value <= DateTime.Now)
             {
                 throw new InvalidOperationException("Khảo sát đã bắt đầu.");
             }
@@ -370,7 +434,8 @@ namespace khaosat_api.Services
                         Id = Guid.NewGuid(),
                         SurveyId = id,
                         TargetType = tDto.TargetType,
-                        TargetId = tDto.TargetType == 1 ? null : tDto.TargetId
+                        DepartmentId = tDto.TargetType == 1 ? null : tDto.DepartmentId,
+                        PositionId = tDto.TargetType == 1 ? null : tDto.PositionId
                     };
                     _targetRepository.Add(target);
                 }
@@ -469,81 +534,82 @@ namespace khaosat_api.Services
                 optionsMap[el.Id] = _optionRepository.GetByElementId(el.Id) ?? new List<SurveyElementOption>();
             }
 
+            int activeEmployeeCount = _employeeRepository.GetActiveEmployeeCount();
             var newSurveyId = Guid.NewGuid();
             var newName = GenerateCloneName(existingSurvey.Name);
             var newCode = GenerateUniqueCode();
             var createdDate = DateTime.Now;
 
-            using var scope = new TransactionScope();
-
-            var newSurvey = new Survey
+            using (var scope = new TransactionScope())
             {
-                Id = newSurveyId,
-                Code = newCode,
-                Name = newName,
-                Description = existingSurvey.Description,
-                StartDate = existingSurvey.StartDate,
-                EndDate = existingSurvey.EndDate,
-                Status = 0, // Draft
-                MaxAttempts = existingSurvey.MaxAttempts,
-                CreatedDate = createdDate,
-                UpdatedDate = null
-            };
-
-            _repository.Add(newSurvey);
-
-            if (targets.Count > 0)
-            {
-                foreach (var t in targets)
+                var newSurvey = new Survey
                 {
-                    var target = new SurveyTarget
-                    {
-                        Id = Guid.NewGuid(),
-                        SurveyId = newSurveyId,
-                        TargetType = t.TargetType,
-                        TargetId = t.TargetId
-                    };
-                    _targetRepository.Add(target);
-                }
-            }
-
-            foreach (var el in elements)
-            {
-                var newElementId = Guid.NewGuid();
-                var element = new SurveyElement
-                {
-                    Id = newElementId,
-                    SurveyId = newSurveyId,
-                    FieldName = el.FieldName,
-                    SortOrder = el.SortOrder,
-                    ConfigType = el.ConfigType
+                    Id = newSurveyId,
+                    Code = newCode,
+                    Name = newName,
+                    Description = existingSurvey.Description,
+                    StartDate = existingSurvey.StartDate,
+                    EndDate = existingSurvey.EndDate,
+                    Status = 0, // Draft
+                    MaxAttempts = existingSurvey.MaxAttempts,
+                    CreatedDate = createdDate,
+                    UpdatedDate = null
                 };
 
-                _elementRepository.Add(element);
+                _repository.Add(newSurvey);
 
-                if (optionsMap.TryGetValue(el.Id, out var options) && options != null)
+                if (targets.Count > 0)
                 {
-                    foreach (var opt in options)
+                    foreach (var t in targets)
                     {
-                        var option = new SurveyElementOption
+                        var target = new SurveyTarget
                         {
                             Id = Guid.NewGuid(),
-                            ElementId = newElementId,
-                            Value = opt.Value,
-                            DisplayText = opt.DisplayText,
-                            SortOrder = opt.SortOrder,
-                            IsDefault = opt.IsDefault,
-                            IsActive = opt.IsActive
+                            SurveyId = newSurveyId,
+                            TargetType = t.TargetType,
+                            DepartmentId = t.DepartmentId,
+                            PositionId = t.PositionId
                         };
-
-                        _optionRepository.Add(option);
+                        _targetRepository.Add(target);
                     }
                 }
+
+                foreach (var el in elements)
+                {
+                    var newElementId = Guid.NewGuid();
+                    var element = new SurveyElement
+                    {
+                        Id = newElementId,
+                        SurveyId = newSurveyId,
+                        FieldName = el.FieldName,
+                        SortOrder = el.SortOrder,
+                        ConfigType = el.ConfigType
+                    };
+
+                    _elementRepository.Add(element);
+
+                    if (optionsMap.TryGetValue(el.Id, out var options) && options != null)
+                    {
+                        foreach (var opt in options)
+                        {
+                            var option = new SurveyElementOption
+                            {
+                                Id = Guid.NewGuid(),
+                                ElementId = newElementId,
+                                Value = opt.Value,
+                                DisplayText = opt.DisplayText,
+                                SortOrder = opt.SortOrder,
+                                IsDefault = opt.IsDefault,
+                                IsActive = opt.IsActive
+                            };
+
+                            _optionRepository.Add(option);
+                        }
+                    }
+                }
+
+                scope.Complete();
             }
-
-            scope.Complete();
-
-            int activeEmployeeCount = _employeeRepository.GetActiveEmployeeCount();
 
             return new SurveyDto
             {
@@ -557,7 +623,7 @@ namespace khaosat_api.Services
                 MaxAttempts = existingSurvey.MaxAttempts,
                 CreatedDate = createdDate,
                 UpdatedDate = null,
-                Targets = targets.Select(t => new SurveyTargetDto { TargetType = t.TargetType, TargetId = t.TargetId }).ToList(),
+                Targets = targets.Select(t => new SurveyTargetDto { TargetType = t.TargetType, DepartmentId = t.DepartmentId, PositionId = t.PositionId }).ToList(),
                 TotalResponses = activeEmployeeCount,
                 CompletedCount = 0,
                 IncompleteCount = activeEmployeeCount,

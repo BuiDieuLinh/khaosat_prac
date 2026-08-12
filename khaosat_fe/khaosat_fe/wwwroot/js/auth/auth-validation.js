@@ -10,7 +10,7 @@
                 return true;
             }
 
-            Common.Utils.showToast(Auth.Constants.message.missingCredentials, "error", "loginToast");
+            Common.Utils.showToast(Auth.Constants.message.missingCredentials, "error");
             return false;
         }
     };

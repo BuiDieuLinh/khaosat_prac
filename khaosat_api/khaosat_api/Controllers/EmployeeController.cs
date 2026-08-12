@@ -25,6 +25,13 @@ namespace khaosat_api.Controllers
             return Ok(employees);
         }
 
+        [HttpGet("paged")]
+        public IActionResult GetPaged([FromQuery] EmployeeFilterDto filter)
+        {
+            var result = _employeeService.GetPaged(filter);
+            return Ok(result);
+        }
+
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(Guid id)
         {

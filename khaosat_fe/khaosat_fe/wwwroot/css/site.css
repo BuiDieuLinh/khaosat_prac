@@ -402,7 +402,7 @@ footer a:hover {
 #cardSurveys .dx-cardview-content,
 #cardSurveys .dx-cardview-border-part,
 #cardSurveys .dx-row,
-#cardSurveys .dx-row > td,
+#cardSurveys .dx-row>td,
 #cardSurveys .dx-card,
 #cardSurveys .card-body {
     overflow: visible !important;
@@ -825,7 +825,8 @@ footer a:hover {
     transition: all 0.25s ease;
 }
 
-.wizard-step.active, .wizard-step.completed {
+.wizard-step.active,
+.wizard-step.completed {
     opacity: 1;
 }
 
@@ -844,9 +845,9 @@ footer a:hover {
 }
 
 .wizard-step.active .step-badge {
-    background: var(--primary-gradient);
-    color: #475569;
-    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.35);
+    background: var(--primary-color);
+    color: #ffffff !important;
+    box-shadow: 0 2px 4px rgba(30, 64, 175, 0.2);
 }
 
 .wizard-step.completed .step-badge {
@@ -892,4 +893,16 @@ footer a:hover {
     justify-content: center;
     color: var(--primary-color);
     box-shadow: 0 4px 10px rgba(79, 70, 229, 0.1);
+}
+
+.target-tree-wrapper .dx-treeview {
+    height: auto !important;
+}
+
+.target-tree-wrapper {
+    height: 300px;
+    max-height: 300px;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
 }

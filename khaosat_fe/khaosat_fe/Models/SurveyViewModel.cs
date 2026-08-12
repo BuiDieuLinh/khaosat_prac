@@ -4,8 +4,9 @@ namespace khaosat_fe.Models
 {
     public class SurveyTargetViewModel
     {
-        public int TargetType { get; set; } // 1 = Company, 2 = Department, 3 = Position, 4 = Employee
-        public Guid? TargetId { get; set; }
+        public int TargetType { get; set; } // 0 = Company, 1 = Department, Position,  Employee
+        public Guid? DepartmentId { get; set; }
+        public Guid? PositionId { get; set; }
     }
 
     public class SurveyViewModel
@@ -113,5 +114,22 @@ namespace khaosat_fe.Models
         public int SortOrder { get; set; }
         public bool IsDefault { get; set; }
         public bool IsActive { get; set; } = true;
+    }
+
+    public class SurveyFilterDto
+    {
+        public int PageNumber { get; set; } = 1;
+        public int PageSize { get; set; } = 10;
+        public string? SearchKeyword { get; set; }
+        public SurveyStatus? Status { get; set; }
+        public string? SortBy { get; set; } = "CreatedDate";
+        public bool IsDescending { get; set; } = true;
+    }
+
+    public enum SurveyStatus : byte
+    {
+        Draft = 0,
+        Active = 1,
+        Closed = 2
     }
 }

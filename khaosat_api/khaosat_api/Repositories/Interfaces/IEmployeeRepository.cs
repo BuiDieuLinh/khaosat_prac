@@ -1,3 +1,4 @@
+using khaosat_api.DTOs;
 using khaosat_api.Models;
 using System;
 using System.Collections.Generic;
@@ -11,6 +12,7 @@ namespace khaosat_api.Repositories.Interfaces
         void Add(Employee employee);
         int GetActiveEmployeeCount();
         List<EmployeeResponse> GetAll();
+        PagedResult<EmployeeResponse> GetPaged(EmployeeFilterDto filter);
         List<Department> GetDepartment();
         List<Position> GetPosition(Guid departmentId);
         List<Role> GetRoles();

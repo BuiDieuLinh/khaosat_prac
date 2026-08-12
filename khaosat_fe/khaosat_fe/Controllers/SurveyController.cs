@@ -1,13 +1,13 @@
-using Microsoft.AspNetCore.Mvc;
 using System;
+using System.Collections.Generic;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
-using System.Collections.Generic;
 using khaosat_fe.Models;
-using Microsoft.Extensions.Configuration;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
 
 namespace khaosat_fe.Controllers
 {
@@ -31,7 +31,7 @@ namespace khaosat_fe.Controllers
             var token = user?.FindFirst("Token")?.Value;
             if (!string.IsNullOrEmpty(token))
             {
-                _httpClient.DefaultRequestHeaders.Authorization = 
+                _httpClient.DefaultRequestHeaders.Authorization =
                     new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
             }
         }
@@ -48,13 +48,61 @@ namespace khaosat_fe.Controllers
             try
             {
                 var surveys = await _httpClient.GetFromJsonAsync<List<SurveyViewModel>>("api/survey");
-                    return Json(surveys);
-                }
+                return Json(surveys);
+            }
             catch
             {
                 return Json(new List<SurveyViewModel>());
             }
         }
+
+
+        [HttpGet("paged")]
+        public async Task<IActionResult> GetPagedSurveys([FromQuery] SurveyFilterDto filter)
+        {
+            AttachBearerToken();
+
+            try
+            {
+                var queryParams = new List<string>();
+
+                if (filter.PageNumber > 0)
+                    queryParams.Add($"pageNumber={filter.PageNumber}");
+                if (filter.PageSize > 0)
+                    queryParams.Add($"pageSize={filter.PageSize}");
+                if (!string.IsNullOrWhiteSpace(filter.SearchKeyword))
+                    queryParams.Add($"searchKeyword={Uri.EscapeDataString(filter.SearchKeyword)}");
+                if (filter.Status.HasValue)
+                    queryParams.Add($"status={(int)filter.Status.Value}");
+                if (!string.IsNullOrWhiteSpace(filter.SortBy))
+                    queryParams.Add($"sortBy={Uri.EscapeDataString(filter.SortBy)}");
+                queryParams.Add($"isDescending={filter.IsDescending}");
+
+                string queryString = queryParams.Count > 0 ? "?" + string.Join("&", queryParams) : "";
+
+                var pagedResult = await _httpClient.GetFromJsonAsync<PagedResultViewModel<SurveyViewModel>>(
+                    $"api/survey/paged{queryString}"
+                );
+
+                var result = pagedResult ?? new PagedResultViewModel<SurveyViewModel>();
+
+                return Json(new
+                {
+                    data = result.Data,
+                    totalCount = result.TotalCount,
+                    pageNumber = result.PageNumber,
+                    pageSize = result.PageSize,
+                    totalPages = result.TotalPages,
+                    hasPreviousPage = result.HasPreviousPage,
+                    hasNextPage = result.HasNextPage
+                });
+            }
+            catch
+            {
+                return Json(new PagedResultViewModel<SurveyViewModel>());
+            }
+        }
+
 
         public async Task<IActionResult> Detail(Guid id)
         {
@@ -72,7 +120,7 @@ namespace khaosat_fe.Controllers
                     TempData["ErrorMessage"] = "Bạn không thuộc đối tượng tham gia cuộc khảo sát này!";
                     return RedirectToAction("Index");
                 }
-                
+
                 TempData["ErrorMessage"] = "Không tìm thấy cuộc khảo sát hoặc bạn không có quyền truy cập.";
                 return RedirectToAction("Index");
             }
@@ -93,7 +141,7 @@ namespace khaosat_fe.Controllers
 
             AttachBearerToken();
             try
-            { 
+            {
                 var userIdStr = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
                 if (Guid.TryParse(userIdStr, out Guid employeeId))
                 {

@@ -4,7 +4,7 @@
 
 <div class="survey-builder">
     <div class="builder-page-header mb-4">
-        <a href="@Url.Action("Index", "Survey")" class="btn btn-outline-secondary btn-sm rounded-pill mb-3">
+        <a href="@Url.Action("Index", "Survey")" class="btn btn-outline-secondary btn-sm mb-3" style="border-radius: 4px !important;">
             <i class="dx-icon-arrowleft"></i> Quay lại danh sách
         </a>
         <h1 class="fw-bold text-dark mb-1">@ViewData["Title"]</h1>
@@ -72,28 +72,26 @@
                 </div>
 
                 <div class="row g-4" id="targetSpecificGroup" style="display: none;">
-                    <div class="col-md-6">
-                        <label class="form-label text-dark fw-semibold small">Chọn Phòng ban áp dụng (Department)</label>
-                        @(Html.DevExtreme().TagBox()
-                            .ID("targetDepartments")
-                            .DataSource(d => d.Mvc().Controller("Department").LoadAction("GetDepartments"))
-                            .ValueExpr("Id")
-                            .DisplayExpr("DepartmentName")
-                            .Placeholder("Chọn một hoặc nhiều phòng ban...")
-                            .ShowClearButton(true)
-                            .SearchEnabled(true)
-                        )
-                    </div>
-                    <div class="col-md-6">
-                        <label class="form-label text-dark fw-semibold small">Chọn Chức vụ áp dụng (Position)</label>
-                        @(Html.DevExtreme().TagBox()
-                            .ID("targetPositions")
-                            .DataSource(d => d.Mvc().Controller("Department").LoadAction("GetPositions"))
-                            .ValueExpr("Id")
-                            .DisplayExpr("PositionName")
-                            .Placeholder("Chọn một hoặc nhiều chức vụ...")
-                            .ShowClearButton(true)
-                            .SearchEnabled(true)
+                    <div class="col-md-12">
+                        <label class="form-label text-dark fw-semibold small">
+                            Chọn phòng ban / chức vụ áp dụng
+                        </label>
+
+                        @(Html.DevExtreme().TreeView()
+                            .ID("targetTree")
+                            .DataSource(d => d.Mvc()
+                                .Controller("Department")
+                                .LoadAction("GetDepartments"))
+                            .DataStructure(TreeViewDataStructure.Tree)
+                            .KeyExpr("Id")
+                            .DisplayExpr(new JS("window.Survey.Wizard.getTreeNodeDisplayExpr"))
+                            .ItemsExpr("Positions")
+                            .ExpandedExpr("Expanded")
+                            .SelectionMode(NavSelectionMode.Multiple)
+                            .ShowCheckBoxesMode(TreeViewCheckBoxMode.Normal)
+                            .SelectNodesRecursive(true)
+                            .ExpandNodesRecursive(true)
+                            .OnContentReady("function(e) { window.Survey.Wizard.onTreeContentReady(e); }")
                         )
                     </div>
                 </div>
@@ -228,31 +226,21 @@
     </div>
 
     <div class="d-flex justify-content-between align-items-center mt-4">
-        <button type="button" class="btn btn-outline-secondary rounded-pill px-4" id="btnWizardBack" style="display: none;" onclick="window.Survey.Wizard.prevStep()">
+        <button type="button" class="btn btn-outline-secondary px-4" id="btnWizardBack" style="display: none; border-radius: 4px !important;" onclick="window.Survey.Wizard.prevStep()">
             <i class="dx-icon-arrowleft me-1"></i> Quay lại
         </button>
         <div></div>
         <div class="d-flex gap-2">
-            <button type="button" class="btn btn-primary rounded-pill px-4" id="btnWizardNext" onclick="window.Survey.Wizard.nextStep()">
+            <button type="button" class="btn btn-primary px-4" id="btnWizardNext" style="border-radius: 4px !important;" onclick="window.Survey.Wizard.nextStep()">
                 Tiếp tục <i class="dx-icon-arrowright ms-1"></i>
             </button>
-            <button type="button" class="btn btn-success rounded-pill px-4" id="btnWizardSave" style="display: none;" onclick="window.Survey.Event.saveSurvey()">
+            <button type="button" class="btn btn-success px-4" id="btnWizardSave" style="display: none; border-radius: 4px !important; background-color: #059669 !important; border-color: #059669 !important;" onclick="window.Survey.Event.saveSurvey()">
                 <i class="dx-icon-save me-1"></i> Lưu & Phát hành khảo sát
             </button>
         </div>
     </div>
 </div>
 
-@(Html.DevExtreme().Toast()
-    .ID("toastCreator")
-    .DisplayTime(3000)
-    .Width(360)
-    .Position(p => p
-        .My(HorizontalAlignment.Right, VerticalAlignment.Top)
-        .At(HorizontalAlignment.Right, VerticalAlignment.Top)
-        .Offset(-20, 20)
-    )
-)
 
 @(Html.DevExtreme().Popup()
     .ID("importExcelPopup")

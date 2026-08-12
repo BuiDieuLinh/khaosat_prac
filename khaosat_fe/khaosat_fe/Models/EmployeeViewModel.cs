@@ -52,7 +52,6 @@ namespace khaosat_fe.Models
     public class PositionViewModel
     {
         public Guid Id { get; set; }
-        public Guid? PositionId { get => Id; set => Id = value ?? Guid.Empty; }
         public string? PositionName { get; set; }
         public string? PositionCode { get; set; }
         public string? Description { get; set; }
@@ -66,6 +65,14 @@ namespace khaosat_fe.Models
         public string? DepartmentName { get; set; }
         public string? DepartmentCode { get; set; }
         public string? Description { get; set; }
+        public List<PositionRepsViewModel> Positions { get; set; } = new List<PositionRepsViewModel>();
+    }
+
+    public class PositionRepsViewModel
+    {
+        public Guid Id { get; set; }
+        public string? PositionName { get; set; }
+        public string? PositionCode { get; set; }
     }
 
     public class RoleViewModel
@@ -73,4 +80,27 @@ namespace khaosat_fe.Models
         public Guid Id { get; set; }
         public string RoleName { get; set; } = string.Empty;
     }
+
+    public class EmployeeFilterViewModel
+    {
+        public int PageNumber { get; set; } = 1;
+        public int PageSize { get; set; } = 10;
+        public string? SearchKeyword { get; set; }
+        public Guid? DepartmentId { get; set; }
+        public Guid? PositionId { get; set; }
+        public bool? IsActive { get; set; }
+        public string? SortBy { get; set; } = "CreatedDate";
+        public bool IsDescending { get; set; } = true;
+    }
+
+    //public class PagedResultViewModel<T>
+    //{
+    //    public List<T> Data { get; set; } = new List<T>();
+    //    public int TotalCount { get; set; }
+    //    public int PageNumber { get; set; }
+    //    public int PageSize { get; set; }
+    //    public int TotalPages { get; set; }
+    //    public bool HasPreviousPage { get; set; }
+    //    public bool HasNextPage { get; set; }
+    //}
 }

@@ -45,11 +45,48 @@ namespace khaosat_fe.Controllers
             try
             {
                 var employees = await _httpClient.GetFromJsonAsync<List<EmployeeViewModel>>("api/employee");
-                    return Json(employees);
-                }
+                return Json(employees);
+            }
             catch
             {
                 return Json(new List<EmployeeViewModel>());
+            }
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetPagedEmployees([FromQuery] EmployeeFilterViewModel filter)
+        {
+            AttachBearerToken();
+            try
+            {
+                var queryParams = new List<string>();
+                if (filter.PageNumber > 0) queryParams.Add($"pageNumber={filter.PageNumber}");
+                if (filter.PageSize > 0) queryParams.Add($"pageSize={filter.PageSize}");
+                if (!string.IsNullOrWhiteSpace(filter.SearchKeyword)) queryParams.Add($"searchKeyword={Uri.EscapeDataString(filter.SearchKeyword)}");
+                if (filter.DepartmentId.HasValue && filter.DepartmentId.Value != Guid.Empty) queryParams.Add($"departmentId={filter.DepartmentId.Value}");
+                if (filter.PositionId.HasValue && filter.PositionId.Value != Guid.Empty) queryParams.Add($"positionId={filter.PositionId.Value}");
+                if (filter.IsActive.HasValue) queryParams.Add($"isActive={filter.IsActive.Value}");
+                if (!string.IsNullOrWhiteSpace(filter.SortBy)) queryParams.Add($"sortBy={Uri.EscapeDataString(filter.SortBy)}");
+                queryParams.Add($"isDescending={filter.IsDescending}");
+
+                string queryString = queryParams.Count > 0 ? "?" + string.Join("&", queryParams) : "";
+                var pagedResult = await _httpClient.GetFromJsonAsync<PagedResultViewModel<EmployeeViewModel>>($"api/employee/paged{queryString}");
+
+                var result = pagedResult ?? new PagedResultViewModel<EmployeeViewModel>();
+                return Json(new
+                {
+                    data = result.Data,
+                    totalCount = result.TotalCount,
+                    pageNumber = result.PageNumber,
+                    pageSize = result.PageSize,
+                    totalPages = result.TotalPages,
+                    hasPreviousPage = result.HasPreviousPage,
+                    hasNextPage = result.HasNextPage
+                });
+            }
+            catch
+            {
+                return Json(new PagedResultViewModel<EmployeeViewModel>());
             }
         }
 

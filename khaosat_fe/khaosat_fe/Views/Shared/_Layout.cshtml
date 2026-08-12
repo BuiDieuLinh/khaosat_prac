@@ -17,6 +17,7 @@
         <script src="~/js/devextreme/aspnet/dx.aspnet.mvc.js"></script>
         <script src="~/lib/jquery-validation/dist/jquery.validate.min.js"></script>
         <script src="~/lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.min.js"></script>
+        <script src="~/js/common.js" asp-append-version="true"></script>
     </head>
     <body>
         <header>
@@ -81,6 +82,7 @@
             <main role="main" class="pb-3">
                 @RenderBody()
             </main>
+            <partial name="_Toast.cshtml" />
         </div>
 
         <footer class="footer text-muted py-3 bg-white">

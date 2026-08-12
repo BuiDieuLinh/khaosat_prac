@@ -33,7 +33,7 @@
 
     function saveSurvey() {
         if (isSaving) return;
-        
+
         if (Survey.Wizard) {
             if (!Survey.Wizard.validateStep(1) || !Survey.Wizard.validateStep(2) || !Survey.Wizard.validateStep(3)) {
                 return;
@@ -85,58 +85,15 @@
 
     function submitResponse() {
         const employeeId = $(S.employeeId).val();
-        if (!employeeId) return Common.Utils.showToast("Không tìm thấy thông tin nhân viên đăng nhập!", "error", "toastDetail");
+        if (!employeeId) return Common.Utils.showToast("Không tìm thấy thông tin nhân viên đăng nhập!", "error");
         if (!Survey.Validation.validateResponse(Survey.surveyElements || [])) return;
 
         Survey.Api.submitResponse({ surveyId: Survey.surveyId, employeeId, answers: collectAnswers(Survey.surveyElements) })
             .done(function () {
-                Common.Utils.showToast("Gửi khảo sát thành công!", "success", "toastDetail");
+                Common.Utils.showToast("Gửi khảo sát thành công!", "success");
                 window.setTimeout(function () { window.location.assign(Survey.Urls.index); }, 1500);
             })
-            .fail(function (xhr) { Common.Utils.showToast(`Lỗi gửi khảo sát: ${Survey.Api.getErrorMessage(xhr)}`, "error", "toastDetail"); });
-    }
-
-    function loadPositions(departmentId, currentPosId) {
-        const positionWidget = $(S.targetPosition).dxSelectBox("instance");
-        if (!positionWidget) return;
-
-        if (!departmentId) {
-            positionWidget.option("dataSource", []);
-            positionWidget.option("value", null);
-            positionWidget.option("disabled", true);
-            return;
-        }
-
-        const url = (Survey.Urls || {}).getPositions || "/Department/GetPositions";
-        $.get(url, { departmentId: departmentId })
-            .done(function (positions) {
-                positionWidget.option("disabled", false);
-                positionWidget.option("dataSource", positions || []);
-                if (currentPosId) {
-                    positionWidget.option("value", currentPosId);
-                }
-            })
-            .fail(function () {
-                positionWidget.option("dataSource", []);
-                positionWidget.option("disabled", true);
-            });
-    }
-
-    function initializeTargetPosition() {
-        const department = $(S.targetDepartment).dxSelectBox("instance");
-        const position = $(S.targetPosition).dxSelectBox("instance");
-        if (!department || !position) return;
-
-        department.on("valueChanged", function (event) {
-            position.option("value", null);
-            loadPositions(event.value, null);
-        });
-
-        const currentDeptId = department.option("value");
-        if (currentDeptId) {
-            const currentPosId = position.option("value");
-            loadPositions(currentDeptId, currentPosId);
-        }
+            .fail(function (xhr) { Common.Utils.showToast(`Lỗi gửi khảo sát: ${Survey.Api.getErrorMessage(xhr)}`, "error"); });
     }
 
     let selectedExcelFile = null;
@@ -489,7 +446,6 @@
             if (Survey.Builder && typeof Survey.Builder.init === "function") {
                 Survey.Builder.init();
             }
-            initializeTargetPosition();
             $('body').tooltip({
                 selector: '[data-bs-toggle="tooltip"]',
                 trigger: 'hover'

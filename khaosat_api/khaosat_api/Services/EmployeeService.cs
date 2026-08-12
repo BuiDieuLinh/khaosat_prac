@@ -141,8 +141,34 @@ namespace khaosat_api.Services
                 DepartmentCode = e.DepartmentCode,
 
                 Roles = e.Roles ?? new List<Role>(),
-                RoleIds = e.RoleIds ?? new List<Guid>()
             }).ToList();
+        }
+
+        public PagedResult<EmployeeResponseDto> GetPaged(EmployeeFilterDto filter)
+        {
+            var pagedResult = _repository.GetPaged(filter);
+            var dtos = pagedResult.Data.Select(e => new EmployeeResponseDto
+            {
+                Id = e.Id,
+                EmployeeCode = e.EmployeeCode,
+                FullName = e.FullName,
+                Email = e.Email,
+                IsActive = e.IsActive,
+                CreatedDate = e.CreatedDate,
+
+                PositionId = e.PositionId,
+                PositionName = e.PositionName,
+                PositionCode = e.PositionCode,
+
+                DepartmentId = e.DepartmentId,
+                DepartmentName = e.DepartmentName,
+                DepartmentCode = e.DepartmentCode,
+
+                Roles = e.Roles ?? new List<Role>(),
+                RoleIds = e.RoleIds ?? (e.Roles?.Select(r => r.Id).ToList() ?? new List<Guid>())
+            }).ToList();
+
+            return new PagedResult<EmployeeResponseDto>(dtos, pagedResult.TotalCount, pagedResult.PageNumber, pagedResult.PageSize);
         }
 
         public Task<EmployeeResponse?> GetByIdAsync(Guid guid)

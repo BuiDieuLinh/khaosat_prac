@@ -1,0 +1,25 @@
+﻿@(Html.DevExtreme().Toast()
+    .ID("globalToast")
+    .DisplayTime(3000)
+    .Width(350)
+    .Animation(a => a
+        .Show(s => s
+            .Type(AnimationType.Fade)
+            .Duration(400)
+            .From(0)
+            .To(1)
+        )
+        .Hide(h => h
+            .Type(AnimationType.Fade)
+            .Duration(400)
+            .From(1)
+            .To(0)
+        )
+    )
+    
+    .Position(p => p
+        .My(HorizontalAlignment.Right, VerticalAlignment.Top)
+        .At(HorizontalAlignment.Right, VerticalAlignment.Top)
+        .Offset(-20, 20)
+    )
+)

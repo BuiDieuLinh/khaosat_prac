@@ -18,8 +18,9 @@
             importPopup: "#importExcelPopup",
             importFile: "#importExcelFile",
             importMode: "#importMode",
-            targetDepartment: "#surveyTargetDepartment",
-            targetPosition: "#surveyTargetPosition",
+            targetTree: "#targetTree",
+            isWholeCompany: "#isWholeCompany",
+            targetSpecificGroup: "#targetSpecificGroup",
             employeeId: "#employeeId"
         },
         dataType: {

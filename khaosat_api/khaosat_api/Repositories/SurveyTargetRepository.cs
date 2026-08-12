@@ -34,7 +34,8 @@ namespace khaosat_api.Repositories
                     Id = Guid.Parse(reader["Id"].ToString()!),
                     SurveyId = Guid.Parse(reader["SurveyId"].ToString()!),
                     TargetType = Convert.ToInt32(reader["TargetType"]),
-                    TargetId = reader["TargetId"] == DBNull.Value ? null : Guid.Parse(reader["TargetId"].ToString()!)
+                    DepartmentId = reader["DepartmentId"] == DBNull.Value ? null : Guid.Parse(reader["DepartmentId"].ToString()!),
+                    PositionId = reader["PositionId"] == DBNull.Value ? null : Guid.Parse(reader["PositionId"].ToString()!)
                 });
             }
 
@@ -47,14 +48,15 @@ namespace khaosat_api.Repositories
             conn.Open();
 
             const string sql = @"
-                INSERT INTO SurveyTarget (Id, SurveyId, TargetType, TargetId)
-                VALUES (@Id, @SurveyId, @TargetType, @TargetId)";
+                INSERT INTO SurveyTarget (Id, SurveyId, TargetType, DepartmentId, PositionId)
+                VALUES (@Id, @SurveyId, @TargetType, @DepartmentId, @PositionId)";
 
             using var cmd = new SqlCommand(sql, conn);
             cmd.Parameters.AddWithValue("@Id", target.Id == Guid.Empty ? Guid.NewGuid() : target.Id);
             cmd.Parameters.AddWithValue("@SurveyId", target.SurveyId);
             cmd.Parameters.AddWithValue("@TargetType", target.TargetType);
-            cmd.Parameters.AddWithValue("@TargetId", (object?)target.TargetId ?? DBNull.Value);
+            cmd.Parameters.AddWithValue("@DepartmentId", (object?)target.DepartmentId ?? DBNull.Value);
+            cmd.Parameters.AddWithValue("@PositionId", (object?)target.PositionId ?? DBNull.Value);
 
             cmd.ExecuteNonQuery();
         }

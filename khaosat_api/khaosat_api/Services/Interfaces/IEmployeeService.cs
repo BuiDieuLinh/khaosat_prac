@@ -11,6 +11,7 @@ namespace khaosat_api.Services.Interfaces
         bool Register(EmployeeRegisterDto dto);
 
         List<EmployeeResponseDto> GetAll();
+        PagedResult<EmployeeResponseDto> GetPaged(EmployeeFilterDto filter);
         List<Department> GetDepartment();
         List<Position> GetPosition(Guid departmentId);
         List<Role> GetRoles();

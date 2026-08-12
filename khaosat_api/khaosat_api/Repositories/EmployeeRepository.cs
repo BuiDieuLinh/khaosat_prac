@@ -1,4 +1,5 @@
 using khaosat_api.Data;
+using khaosat_api.DTOs;
 using khaosat_api.Models;
 using khaosat_api.Repositories.Interfaces;
 using System.Data.SqlClient;
@@ -206,6 +207,156 @@ namespace khaosat_api.Repositories
             return employees.Values.ToList();
         }
 
+        public PagedResult<EmployeeResponse> GetPaged(EmployeeFilterDto filter)
+        {
+            int pageNumber = filter.PageNumber < 1 ? 1 : filter.PageNumber;
+            int pageSize = filter.PageSize < 1 ? 10 : (filter.PageSize > 100 ? 100 : filter.PageSize);
+            int skip = (pageNumber - 1) * pageSize;
+
+            using var conn = _factory.Create();
+            conn.Open();
+
+            var whereConditions = new List<string>();
+            var countCmd = new SqlCommand { Connection = conn };
+
+            if (!string.IsNullOrWhiteSpace(filter.SearchKeyword))
+            {
+                whereConditions.Add("(e.FullName LIKE @Search OR e.EmployeeCode LIKE @Search OR e.Email LIKE @Search)");
+                countCmd.Parameters.AddWithValue("@Search", $"%{filter.SearchKeyword.Trim()}%");
+            }
+
+            if (filter.DepartmentId.HasValue && filter.DepartmentId.Value != Guid.Empty)
+            {
+                whereConditions.Add("d.Id = @DepartmentId");
+                countCmd.Parameters.AddWithValue("@DepartmentId", filter.DepartmentId.Value);
+            }
+
+            if (filter.PositionId.HasValue && filter.PositionId.Value != Guid.Empty)
+            {
+                whereConditions.Add("p.Id = @PositionId");
+                countCmd.Parameters.AddWithValue("@PositionId", filter.PositionId.Value);
+            }
+
+            if (filter.IsActive.HasValue)
+            {
+                whereConditions.Add("e.IsActive = @IsActive");
+                countCmd.Parameters.AddWithValue("@IsActive", filter.IsActive.Value);
+            }
+
+            string whereSql = whereConditions.Count > 0 ? " WHERE " + string.Join(" AND ", whereConditions) : "";
+
+            countCmd.CommandText = $@"
+                SELECT COUNT(DISTINCT e.Id)
+                FROM Employee e
+                LEFT JOIN Position p ON e.PositionId = p.Id
+                LEFT JOIN Department d ON p.DepartmentId = d.Id
+                {whereSql}";
+
+            int totalCount = Convert.ToInt32(countCmd.ExecuteScalar());
+            if (totalCount == 0)
+            {
+                return new PagedResult<EmployeeResponse>(new List<EmployeeResponse>(), 0, pageNumber, pageSize);
+            }
+
+            string sortColumn = filter.SortBy?.ToLower() switch
+            {
+                "fullname" => "e.FullName",
+                "employeecode" => "e.EmployeeCode",
+                "email" => "e.Email",
+                "positionname" => "p.PositionName",
+                "departmentname" => "d.DepartmentName",
+                "isactive" => "e.IsActive",
+                _ => "e.CreatedDate"
+            };
+            string sortDirection = filter.IsDescending ? "DESC" : "ASC";
+            string peSortColumn = sortColumn.Replace("e.", "pe.").Replace("p.", "pe.").Replace("d.", "pe.");
+
+            string querySql = $@"
+                WITH PagedEmployees AS (
+                    SELECT 
+                        e.Id,
+                        e.EmployeeCode,
+                        e.FullName,
+                        e.Email,
+                        e.IsActive,
+                        e.CreatedDate,
+                        p.Id AS PositionId,
+                        p.PositionName,
+                        p.PositionCode,
+                        d.Id AS DepartmentId,
+                        d.DepartmentName,
+                        d.DepartmentCode
+                    FROM Employee e
+                    LEFT JOIN Position p ON e.PositionId = p.Id
+                    LEFT JOIN Department d ON p.DepartmentId = d.Id
+                    {whereSql}
+                    ORDER BY {sortColumn} {sortDirection}, e.Id ASC
+                    OFFSET @Skip ROWS FETCH NEXT @Take ROWS ONLY
+                )
+                SELECT 
+                    pe.*,
+                    r.Id AS RoleId,
+                    r.RoleName
+                FROM PagedEmployees pe
+                LEFT JOIN UserRole ur ON pe.Id = ur.EmployeeId
+                LEFT JOIN Role r ON ur.RoleId = r.Id
+                ORDER BY {peSortColumn} {sortDirection}, pe.Id ASC";
+
+            using var queryCmd = new SqlCommand(querySql, conn);
+            foreach (SqlParameter p in countCmd.Parameters)
+            {
+                queryCmd.Parameters.Add(new SqlParameter(p.ParameterName, p.Value));
+            }
+            queryCmd.Parameters.AddWithValue("@Skip", skip);
+            queryCmd.Parameters.AddWithValue("@Take", pageSize);
+
+            using var reader = queryCmd.ExecuteReader();
+            var employeesMap = new Dictionary<Guid, EmployeeResponse>();
+            var employeeOrder = new List<Guid>();
+
+            while (reader.Read())
+            {
+                var employeeId = (Guid)reader["Id"];
+                if (!employeesMap.TryGetValue(employeeId, out var employee))
+                {
+                    employee = new EmployeeResponse
+                    {
+                        Id = employeeId,
+                        EmployeeCode = reader["EmployeeCode"].ToString()!,
+                        FullName = reader["FullName"].ToString()!,
+                        Email = reader["Email"].ToString()!,
+                        IsActive = Convert.ToBoolean(reader["IsActive"]),
+                        CreatedDate = Convert.ToDateTime(reader["CreatedDate"]),
+                        PositionId = reader["PositionId"] != DBNull.Value
+                            ? (Guid)reader["PositionId"]
+                            : Guid.Empty,
+                        PositionCode = reader["PositionCode"]?.ToString() ?? "",
+                        PositionName = reader["PositionName"]?.ToString() ?? "",
+                        DepartmentId = reader["DepartmentId"] != DBNull.Value
+                            ? (Guid)reader["DepartmentId"]
+                            : null,
+                        DepartmentCode = reader["DepartmentCode"]?.ToString() ?? "",
+                        DepartmentName = reader["DepartmentName"]?.ToString() ?? "",
+                        Roles = new List<Role>()
+                    };
+                    employeesMap.Add(employeeId, employee);
+                    employeeOrder.Add(employeeId);
+                }
+
+                if (reader["RoleId"] != DBNull.Value)
+                {
+                    employee.Roles.Add(new Role
+                    {
+                        Id = (Guid)reader["RoleId"],
+                        RoleName = reader["RoleName"].ToString()!
+                    });
+                }
+            }
+
+            var data = employeeOrder.Select(id => employeesMap[id]).ToList();
+            return new PagedResult<EmployeeResponse>(data, totalCount, pageNumber, pageSize);
+        }
+
         public async Task<EmployeeResponse?> GetByIdAsync(Guid id)
         {
             using var conn = _factory.Create();
@@ -299,29 +450,63 @@ namespace khaosat_api.Repositories
         }
         public List<Department> GetDepartment()
         {
-            var list = new List<Department>();
+            var departments = new Dictionary<Guid, Department>();
+
             using var conn = _factory.Create();
             conn.Open();
+
             try
             {
-                const string sql = "SELECT * FROM Department";
+                const string sql = @"
+                    SELECT
+                        d.Id AS DepartmentId,
+                        d.DepartmentName,
+                        d.DepartmentCode,
+                        d.Description,
+                        p.Id AS PositionId,
+                        p.PositionName,
+                        p.PositionCode
+                    FROM Department d
+                    LEFT JOIN Position p ON p.DepartmentId = d.Id
+                    ORDER BY d.DepartmentName, p.PositionName";
+
                 using var cmd = new SqlCommand(sql, conn);
                 using var reader = cmd.ExecuteReader();
+
                 while (reader.Read())
                 {
-                    list.Add(new Department
+                    var departmentId = Guid.Parse(reader["DepartmentId"].ToString()!);
+
+                    if (!departments.TryGetValue(departmentId, out var department))
                     {
-                        Id = HasColumn(reader, "Id") ? Guid.Parse(reader["Id"].ToString()!) : (HasColumn(reader, "DepartmentId") ? Guid.Parse(reader["DepartmentId"].ToString()!) : Guid.NewGuid()),
-                        DepartmentName = HasColumn(reader, "DepartmentName") ? reader["DepartmentName"].ToString()! : (HasColumn(reader, "Name") ? reader["Name"].ToString()! : ""),
-                        DepartmentCode = HasColumn(reader, "DepartmentCode") ? reader["DepartmentCode"].ToString()! : (HasColumn(reader, "Code") ? reader["Code"].ToString()! : ""),
-                        Description = HasColumn(reader, "Description") ? reader["Description"].ToString()! : ""
-                    });
+                        department = new Department
+                        {
+                            Id = departmentId,
+                            DepartmentName = reader["DepartmentName"] == DBNull.Value ? "" : reader["DepartmentName"].ToString()!,
+                            DepartmentCode = reader["DepartmentCode"] == DBNull.Value ? "" : reader["DepartmentCode"].ToString()!,
+                            Description = reader["Description"] == DBNull.Value ? "" : reader["Description"].ToString()!,
+                            Positions = new List<PositionReps>()
+                        };
+
+                        departments.Add(departmentId, department);
+                    }
+
+                    if (reader["PositionId"] != DBNull.Value)
+                    {
+                        department.Positions.Add(new PositionReps
+                        {
+                            Id = Guid.Parse(reader["PositionId"].ToString()!),
+                            PositionName = reader["PositionName"] == DBNull.Value ? "" : reader["PositionName"].ToString()!,
+                            PositionCode = reader["PositionCode"] == DBNull.Value ? "" : reader["PositionCode"].ToString()!
+                        });
+                    }
                 }
             }
             catch
             {
             }
-            return list;
+
+            return departments.Values.ToList();
         }
 
         public List<Position> GetPosition(Guid departmentId)

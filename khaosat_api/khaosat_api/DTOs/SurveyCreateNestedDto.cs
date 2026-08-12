@@ -1,3 +1,4 @@
+using khaosat_api.Models;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -20,7 +21,7 @@ namespace khaosat_api.DTOs
 
         public DateTime? EndDate { get; set; }
 
-        public byte Status { get; set; } = 1;
+        public SurveyStatus Status { get; set; } = (SurveyStatus)1;
 
         public int? MaxAttempts { get; set; }
 

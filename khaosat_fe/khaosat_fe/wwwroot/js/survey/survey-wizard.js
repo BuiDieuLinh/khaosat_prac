@@ -5,6 +5,7 @@
     const Common = window.Common = window.Common || {};
 
     let currentStep = 1;
+    let treeInitialized = false;
 
     function showError(msg) {
         Common.Utils.showToast(msg, "error");
@@ -18,18 +19,42 @@
         const isCompany = $("#isWholeCompany").dxCheckBox("instance") ? $("#isWholeCompany").dxCheckBox("instance").option("value") : true;
         let targetText = "Toàn bộ công ty (Whole Company)";
         if (!isCompany) {
-            const depWidget = $("#targetDepartments").dxTagBox("instance");
-            const posWidget = $("#targetPositions").dxTagBox("instance");
-            const depItems = depWidget ? depWidget.option("selectedItems") || [] : [];
-            const posItems = posWidget ? posWidget.option("selectedItems") || [] : [];
+            const treeWidget = $("#targetTree").dxTreeView("instance");
+            if (treeWidget) {
+                const selectedNodes = treeWidget.getSelectedNodes() || [];
+                const deptNames = [];
+                const posNames = [];
+                const processedDeptIds = new Set();
 
-            const depNames = depItems.map(i => i.DepartmentName || i.name).join(", ");
-            const posNames = posItems.map(i => i.PositionName || i.name).join(", ");
+                selectedNodes.forEach(node => {
+                    const isDeptNode = !node.parent || !node.parent.itemData || !node.parent.key;
+                    if (isDeptNode && node.selected === true) {
+                        const dText = Survey.Wizard ? Survey.Wizard.getTreeNodeDisplayExpr(node.itemData) : (node.itemData.departmentName || node.itemData.DepartmentName);
+                        const dId = node.itemData.id || node.itemData.Id;
+                        if (dText) deptNames.push(dText);
+                        if (dId) processedDeptIds.add(dId);
+                    }
+                });
 
-            const parts = [];
-            if (depNames) parts.push(`<strong>Phòng ban:</strong> ${depNames}`);
-            if (posNames) parts.push(`<strong>Chức vụ:</strong> ${posNames}`);
-            targetText = parts.join(" | ") || "Không giới hạn cụ thể";
+                selectedNodes.forEach(node => {
+                    const isPosNode = node.parent && node.parent.itemData && node.parent.key;
+                    if (isPosNode && node.selected === true) {
+                        const deptId = node.parent.itemData.id || node.parent.itemData.Id;
+                        if (!processedDeptIds.has(deptId)) {
+                            const pText = Survey.Wizard ? Survey.Wizard.getTreeNodeDisplayExpr(node.itemData) : (node.itemData.positionName || node.itemData.PositionName);
+                            const dName = node.parent.itemData.departmentName || node.parent.itemData.DepartmentName;
+                            if (pText) {
+                                posNames.push(dName ? `${pText} (${dName})` : pText);
+                            }
+                        }
+                    }
+                });
+
+                const parts = [];
+                if (deptNames.length) parts.push(`<strong>Phòng ban:</strong> ${deptNames.join(", ")}`);
+                if (posNames.length) parts.push(`<strong>Chức vụ:</strong> ${posNames.join(", ")}`);
+                targetText = parts.join(" | ") || "Chưa chọn đối tượng";
+            }
         }
 
         const code = String($("#surveyCode").dxTextBox("instance") ? $("#surveyCode").dxTextBox("instance").option("value") || "" : "").trim();
@@ -112,9 +137,9 @@
 
             <div class="row g-4 mb-4">
                 <div class="col-md-12">
-                    <div class="card border-0 shadow-sm p-3 bg-light rounded-3">
+                    <div class="card border-0 shadow-sm p-3 bg-light rounded-3" style="background-color: #ffffff !important;">
                         <div class="card-body">
-                            <h5 class="fw-bold text-dark mb-3"><i class="dx-icon-info text-primary me-2"></i>Tổng quan cuộc khảo sát</h5>
+                            <h5 class="fw-bold text-dark mb-3">Tổng quan cuộc khảo sát</h5>
                             <div class="row g-3 text-secondary small">
                                 <div class="col-md-3"><strong>Mã khảo sát:</strong> <span class="text-dark fw-bold">${code}</span></div>
                                 <div class="col-md-6"><strong>Tên khảo sát:</strong> <span class="text-dark fw-bold">${name}</span></div>
@@ -146,18 +171,14 @@
 
         onWholeCompanyChanged: function (e) {
             const isChecked = e.value;
-            const $dep = $("#targetDepartments");
-            const $pos = $("#targetPositions");
+            const treeWidget = $("#targetTree").dxTreeView("instance");
 
-            if ($dep.length && $dep.dxTagBox("instance")) {
-                const depBox = $dep.dxTagBox("instance");
-                depBox.option("disabled", isChecked);
-                if (isChecked) depBox.option("value", []);
-            }
-            if ($pos.length && $pos.dxTagBox("instance")) {
-                const posBox = $pos.dxTagBox("instance");
-                posBox.option("disabled", isChecked);
-                if (isChecked) posBox.option("value", []);
+            if (treeWidget) {
+                treeWidget.option("disabled", isChecked);
+
+                if (isChecked) {
+                    treeWidget.unselectAll();
+                }
             }
 
             if (isChecked) {
@@ -167,13 +188,59 @@
             }
         },
 
+        getTreeNodeDisplayExpr: function (item) {
+            if (!item) return "";
+            const dName = item.departmentName || item.DepartmentName;
+            if (dName) {
+                const dCode = item.departmentCode || item.DepartmentCode;
+                return dCode ? `${dName} (${dCode})` : dName;
+            }
+            const pName = item.positionName || item.PositionName;
+            if (pName) {
+                const pCode = item.positionCode || item.PositionCode;
+                return pCode ? `${pName} (${pCode})` : pName;
+            }
+            return "";
+        },
+
+
+
+        onTreeContentReady: function (e) {
+            const isCompany = $("#isWholeCompany").dxCheckBox("instance") ? $("#isWholeCompany").dxCheckBox("instance").option("value") : true;
+            const tree = e.component;
+
+            if (isCompany) {
+                tree.option("disabled", true);
+            } else {
+                tree.option("disabled", false);
+            }
+
+            if (!treeInitialized && window.Survey.initialTargets && window.Survey.initialTargets.length > 0) {
+                treeInitialized = true;
+                if (!isCompany) {
+                    tree.unselectAll();
+                    window.Survey.initialTargets.forEach(t => {
+                        const type = t.targetType !== undefined ? t.targetType : t.TargetType;
+                        const deptId = t.departmentId || t.DepartmentId;
+                        const posId = t.positionId || t.PositionId;
+
+                        if (type === 2 && deptId) {
+                            tree.selectItem(deptId);
+                        } else if (type === 3 && posId) {
+                            tree.selectItem(posId);
+                        }
+                    });
+                }
+            }
+        },
+
         validateStep: function (step) {
             if (step === 1) {
                 const isCompany = $("#isWholeCompany").dxCheckBox("instance") ? $("#isWholeCompany").dxCheckBox("instance").option("value") : true;
                 if (!isCompany) {
-                    const deps = $("#targetDepartments").dxTagBox("instance") ? $("#targetDepartments").dxTagBox("instance").option("value") || [] : [];
-                    const poss = $("#targetPositions").dxTagBox("instance") ? $("#targetPositions").dxTagBox("instance").option("value") || [] : [];
-                    if (deps.length === 0 && poss.length === 0) {
+                    const treeWidget = $("#targetTree").dxTreeView("instance");
+                    const selectedNodes = treeWidget ? treeWidget.getSelectedNodes() : [];
+                    if (!selectedNodes || selectedNodes.length === 0) {
                         return showError("Khi không chọn 'Toàn công ty', bạn phải chọn ít nhất một Phòng ban hoặc Chức vụ áp dụng!");
                     }
                 }
@@ -271,13 +338,37 @@
             const isCompany = $("#isWholeCompany").dxCheckBox("instance") ? $("#isWholeCompany").dxCheckBox("instance").option("value") : true;
 
             if (isCompany) {
-                targets.push({ targetType: 1, targetId: null });
+                targets.push({ targetType: 1, departmentId: null, positionId: null });
             } else {
-                const deps = $("#targetDepartments").dxTagBox("instance") ? $("#targetDepartments").dxTagBox("instance").option("value") || [] : [];
-                const poss = $("#targetPositions").dxTagBox("instance") ? $("#targetPositions").dxTagBox("instance").option("value") || [] : [];
+                const treeWidget = $("#targetTree").dxTreeView("instance");
+                if (treeWidget) {
+                    const selectedNodes = treeWidget.getSelectedNodes() || [];
+                    const processedDeptIds = new Set();
 
-                deps.forEach(id => targets.push({ targetType: 2, targetId: id }));
-                poss.forEach(id => targets.push({ targetType: 3, targetId: id }));
+                    selectedNodes.forEach(node => {
+                        const isDeptNode = !node.parent || !node.parent.itemData || !node.parent.key;
+                        if (isDeptNode && node.selected === true) {
+                            const deptId = node.itemData.id || node.itemData.Id;
+                            if (deptId) {
+                                targets.push({ targetType: 2, departmentId: deptId, positionId: null });
+                                processedDeptIds.add(deptId);
+                            }
+                        }
+                    });
+
+                    selectedNodes.forEach(node => {
+                        const isPosNode = node.parent && node.parent.itemData && node.parent.key;
+                        if (isPosNode && node.selected === true) {
+                            const deptId = node.parent.itemData.id || node.parent.itemData.Id;
+                            if (!processedDeptIds.has(deptId)) {
+                                const posId = node.itemData.id || node.itemData.Id;
+                                if (posId) {
+                                    targets.push({ targetType: 3, departmentId: deptId, positionId: posId });
+                                }
+                            }
+                        }
+                    });
+                }
             }
 
             return targets;
