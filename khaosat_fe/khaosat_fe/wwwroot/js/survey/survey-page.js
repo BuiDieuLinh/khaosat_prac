@@ -5,6 +5,7 @@
     const Common = window.Common = window.Common || {};
     const { selector: S } = Survey.Constants || {};
     let isSaving = false;
+    const isEdit = Boolean((Survey.Urls || {}).saveSurvey);
 
     function widgetValue(selector, widgetName) {
         const instance = $(selector)[widgetName]("instance");
@@ -18,6 +19,10 @@
         const maxAttempts = (maxAttemptsVal !== null && maxAttemptsVal !== undefined && maxAttemptsVal !== "") ? parseInt(maxAttemptsVal) : null;
         const targets = Survey.Wizard ? Survey.Wizard.collectTargets() : [];
 
+        const accessTypeVal = widgetValue("#surveyAccessType", "dxSelectBox");
+        const accessType = accessTypeVal ? parseInt(accessTypeVal) : 1;
+        const anonymousMode = widgetValue("#surveyAnonymousMode", "dxCheckBox") || false;
+
         return {
             code: String(widgetValue(S.surveyCode, "dxTextBox") || "").trim(),
             name: String(widgetValue(S.surveyName, "dxTextBox") || "").trim(),
@@ -26,6 +31,8 @@
             endDate,
             status: widgetValue(S.surveyStatus, "dxSelectBox"),
             maxAttempts,
+            accessType,
+            anonymousMode,
             targets,
             elements: Survey.Element.gatherSurveyData()
         };
@@ -45,7 +52,6 @@
 
         isSaving = true;
         Survey.Api.saveSurvey(survey).done(function () {
-            const isEdit = Boolean((Survey.Urls || {}).saveSurvey);
             Common.Utils.showToast(isEdit ? "Cập nhật khảo sát thành công!" : "Tạo khảo sát thành công!", "success");
             window.setTimeout(function () { window.location.assign(Survey.Urls.index); }, 1500);
         }).fail(function (xhr) {
@@ -458,6 +464,12 @@
             $(document).on('hide.bs.dropdown', '.dropdown', function () {
                 $(this).closest('.dx-row, .dx-data-row, .dx-card, .survey-row-card').removeClass('survey-dropdown-open').css('z-index', '');
             });
+
+            const codeEditor = $(S.surveyCode).dxTextBox("instance");
+
+            if (isEdit && codeEditor) {
+                codeEditor.option("disabled", true);
+            }
         }
     };
 

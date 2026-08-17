@@ -1,0 +1,341 @@
+@model khaosat_fe.Models.SurveyReportViewModel
+
+@{
+    ViewData["Title"] = "Báo cáo thống kê - " + Model.SurveyName;
+    var statusText = Model.Status == 1 ? "Đang phát hành" : (Model.Status == 2 ? "Đã đóng" : "Bản nháp");
+    var isInternal = Model.AccessType == 1 || Model.AccessType == 3;
+    var accessTypeText = Model.AccessType == 1 ? "Nội bộ" : (Model.AccessType == 2 ? "Công khai" : "Chỉ định");
+}
+
+<link rel="stylesheet" href="~/css/survey-report.css" asp-append-version="true" />
+
+<div class="container-fluid px-0">
+    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2 d-print-none">
+        @(Html.DevExtreme().Button()
+            .Text("Quay lại")
+            .Icon("arrowleft")
+            .Type(ButtonType.Normal)
+            .StylingMode(ButtonStylingMode.Outlined)
+            .OnClick("function() { window.location.href = '" + Url.Action("Index", "Survey") + "'; }")
+        )
+        @(Html.DevExtreme().Button()
+            .Text("In / Xuất PDF")
+            .Icon("print")
+            .Type(ButtonType.Default)
+            .StylingMode(ButtonStylingMode.Outlined)
+            .OnClick("function() { window.print(); }")
+        )
+    </div>
+
+    <div class="report-card p-4 mb-4">
+        <div class="d-flex justify-content-between align-items-start flex-wrap gap-3">
+            <div>
+                <div class="d-flex align-items-center gap-2 mb-2 flex-wrap">
+                    <span class="custom-badge @(Model.Status == 1 ? "custom-badge-success" : "custom-badge-secondary")">
+                        @statusText
+                    </span>
+                    <span class="custom-badge">
+                        @accessTypeText
+                    </span>
+                    <span class="custom-badge">
+                        @(Model.AnonymousMode ? "Ẩn danh" : "Định danh")
+                    </span>
+                </div>
+                <h1 class="h4 fw-bold text-dark mb-1">@Model.SurveyName</h1>
+                <p class="text-muted small mb-0">
+                    Mã khảo sát: <strong class="text-dark">#@Model.SurveyCode</strong>
+                    @if (!string.IsNullOrEmpty(Model.Description))
+                    {
+                        <span> &bull; @Model.Description</span>
+                    }
+                </p>
+            </div>
+            <div class="text-md-end text-start">
+                <small class="text-muted d-block" style="font-size: 0.75rem;">Thời gian hiệu lực:</small>
+                <span class="fw-semibold text-dark small">
+                    @(Model.StartDate?.ToString("dd/MM/yyyy") ?? "Từ khi tạo") - @(Model.EndDate?.ToString("dd/MM/yyyy") ?? "Không thời hạn")
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-3 mb-4">
+        @if (isInternal)
+        {
+            <div class="col-12 col-sm-6 col-xl-3">
+                <div class="report-stat-card">
+                    <div class="d-flex align-items-start justify-content-between">
+                        <div>
+                            <div class="stat-label">Số phiếu đã nộp</div>
+                            <div class="stat-value">@Model.TotalResponses</div>
+                            <div class="stat-desc">Lượt phản hồi ghi nhận</div>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="dx-icon-doc fs-5"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-sm-6 col-xl-3">
+                <div class="report-stat-card">
+                    <div class="d-flex align-items-start justify-content-between">
+                        <div>
+                            <div class="stat-label">Tỷ lệ hoàn thành</div>
+                            <div class="stat-value text-primary">@Model.CompletionRate%</div>
+                            <div class="stat-desc">@Model.CompletedParticipantsCount / @Model.TotalTargetParticipants nhân sự</div>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="dx-icon-check fs-5"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-sm-6 col-xl-3">
+                <div class="report-stat-card">
+                    <div class="d-flex align-items-start justify-content-between">
+                        <div>
+                            <div class="stat-label">Đối tượng mục tiêu</div>
+                            <div class="stat-value">@Model.TotalTargetParticipants</div>
+                            <div class="stat-desc text-truncate" style="max-width: 170px;" title="@Model.TargetSummary">
+                                @(string.IsNullOrEmpty(Model.TargetSummary) ? "Nhân sự nội bộ" : Model.TargetSummary)
+                            </div>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="dx-icon-group fs-5"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-sm-6 col-xl-3">
+                <div class="report-stat-card">
+                    <div class="d-flex align-items-start justify-content-between">
+                        <div>
+                            <div class="stat-label">Trạng thái khảo sát</div>
+                            <div class="stat-value" style="font-size: 1.35rem; padding-top: 4px;">@statusText</div>
+                            <div class="stat-desc">@(Model.Status == 1 ? "Đang tiếp nhận phiếu" : "Khảo sát đã dừng")</div>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="dx-icon-clock fs-5"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="col-12 col-sm-6 col-xl-3">
+                <div class="report-stat-card">
+                    <div class="d-flex align-items-start justify-content-between">
+                        <div>
+                            <div class="stat-label">Tổng số phản hồi</div>
+                            <div class="stat-value">@Model.TotalResponses</div>
+                            <div class="stat-desc">Phiếu thu thập trực tuyến</div>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="dx-icon-doc fs-5"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-sm-6 col-xl-3">
+                <div class="report-stat-card">
+                    <div class="d-flex align-items-start justify-content-between">
+                        <div>
+                            <div class="stat-label">Hình thức truy cập</div>
+                            <div class="stat-value" style="font-size: 1.35rem; padding-top: 4px;">Công khai</div>
+                            <div class="stat-desc">Truy cập tự do qua link</div>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="dx-icon-globe fs-5"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-sm-6 col-xl-3">
+                <div class="report-stat-card">
+                    <div class="d-flex align-items-start justify-content-between">
+                        <div>
+                            <div class="stat-label">Chế độ khảo sát</div>
+                            <div class="stat-value" style="font-size: 1.35rem; padding-top: 4px;">@(Model.AnonymousMode ? "Ẩn danh" : "Định danh")</div>
+                            <div class="stat-desc">@(Model.AnonymousMode ? "Bảo mật danh tính" : "Ghi nhận thông tin")</div>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="dx-icon-find fs-5"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-sm-6 col-xl-3">
+                <div class="report-stat-card">
+                    <div class="d-flex align-items-start justify-content-between">
+                        <div>
+                            <div class="stat-label">Trạng thái</div>
+                            <div class="stat-value" style="font-size: 1.35rem; padding-top: 4px;">@statusText</div>
+                            <div class="stat-desc">@(Model.Status == 1 ? "Đang mở tiếp nhận" : "Đã dừng tiếp nhận")</div>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="dx-icon-clock fs-5"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+
+    <div class="mb-4">
+        <h5 class="fw-bold text-dark mb-3">
+            Thống kê kết quả từng câu hỏi
+        </h5>
+
+        @if (Model.Questions == null || !Model.Questions.Any())
+        {
+            <div class="report-card p-4 text-center text-muted">
+                <p class="mb-0 small">Khảo sát này chưa có câu hỏi hoặc chưa có dữ liệu phản hồi.</p>
+            </div>
+        }
+        else
+        {
+            int qIndex = 1;
+            <div class="row g-3">
+                @foreach (var q in Model.Questions.OrderBy(x => x.SortOrder))
+                {
+                    <div class="col-12">
+                        <div class="report-card">
+                            <div class="report-card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="question-badge">Câu @qIndex</span>
+                                    <span class="fw-semibold text-dark" style="font-size: 0.925rem;">@q.Caption</span>
+                                </div>
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="text-muted small">Loại: @q.DataType</span>
+                                    <span class="text-muted small">&bull;</span>
+                                    <span class="fw-semibold text-dark small">@q.TotalAnswerCount phản hồi</span>
+                                </div>
+                            </div>
+                            <div class="p-3 px-4">
+                                @if (q.Options != null && q.Options.Any())
+                                {
+                                    <div class="py-1">
+                                        @foreach (var opt in q.Options)
+                                        {
+                                            <div class="option-row">
+                                                <div class="option-header">
+                                                    <span class="option-title">@opt.DisplayText</span>
+                                                    <div class="option-stats">
+                                                        <span class="me-2">@opt.Count lượt</span>
+                                                        <strong>@opt.Percentage%</strong>
+                                                    </div>
+                                                </div>
+                                                <div class="progress-track">
+                                                    <div class="progress-fill fill-primary" style="width: @opt.Percentage%;">
+                                                        @if (opt.Percentage >= 15)
+                                                        {
+                                                            <span>@opt.Percentage%</span>
+                                                        }
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        }
+                                    </div>
+                                }
+                                else if (q.TextAnswers != null && q.TextAnswers.Any())
+                                {
+                                    <div class="py-1">
+                                        <small class="text-muted d-block mb-2 font-monospace" style="font-size: 0.75rem;">DANH SÁCH CÂU TRẢ LỜI (@q.TextAnswers.Count):</small>
+                                        @(Html.DevExtreme().ScrollView()
+                                            .Height(240)
+                                            .ShowScrollbar(ShowScrollbarMode.OnHover)
+                                            .Content(@<text>
+                                                @foreach (var text in q.TextAnswers)
+                                                {
+                                                    <div class="text-answer-item d-flex align-items-start gap-2">
+                                                        <i class="dx-icon-message text-muted mt-1"></i>
+                                                        <span>@text</span>
+                                                    </div>
+                                                }
+                                            </text>)
+                                        )
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div class="text-muted small py-2 fst-italic">
+                                        Chưa có câu trả lời nào được ghi nhận cho câu hỏi này.
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                    qIndex++;
+                }
+            </div>
+        }
+    </div>
+
+    @if (isInternal && Model.DepartmentBreakdown != null && Model.DepartmentBreakdown.Any())
+    {
+        <div class="report-card mb-4 overflow-hidden">
+            <div class="report-card-header">
+                <h6 class="fw-bold text-dark mb-0">
+                    Tỷ lệ hoàn thành theo Phòng ban
+                </h6>
+            </div>
+            <div class="p-0">
+                @(Html.DevExtreme().DataGrid<khaosat_fe.Models.DepartmentReportViewModel>()
+                    .ID("gridDepartmentReport")
+                    .DataSource(Model.DepartmentBreakdown)
+                    .ElementAttr("class", "report-datagrid")
+                    .ShowBorders(false)
+                    .ShowRowLines(true)
+                    .ShowColumnLines(false)
+                    .RowAlternationEnabled(false)
+                    .HoverStateEnabled(true)
+                    .ColumnAutoWidth(true)
+                    .Columns(columns =>
+                    {
+                        columns.AddFor(m => m.DepartmentName)
+                            .Caption("Phòng ban")
+                            .CssClass("dept-name-cell");
+
+                        columns.AddFor(m => m.TotalAssigned)
+                            .Caption("Nhân sự mục tiêu")
+                            .Alignment(HorizontalAlignment.Center)
+                            .Width(150);
+
+                        columns.AddFor(m => m.CompletedCount)
+                            .Caption("Đã hoàn thành")
+                            .Alignment(HorizontalAlignment.Center)
+                            .Width(140)
+                            .CssClass("dept-completed-cell");
+
+                        columns.AddFor(m => m.CompletionRate)
+                            .Caption("Tiến độ")
+                            .Width(250)
+                            .CellTemplate(@<text>
+                                <div class="progress-track" style="height: 18px;">
+                                    <div class="progress-fill <%- data.CompletionRate >= 80 ? 'fill-success' : (data.CompletionRate >= 50 ? 'fill-primary' : 'fill-warning') %>" style="width: <%- data.CompletionRate %>%;">
+                                        <% if (data.CompletionRate >= 15) { %>
+                                            <span><%- data.CompletionRate %>%</span>
+                                        <% } %>
+                                    </div>
+                                </div>
+                            </text>);
+
+                        columns.AddFor(m => m.CompletionRate)
+                            .Caption("Tỷ lệ")
+                            .Alignment(HorizontalAlignment.Center)
+                            .Width(100)
+                            .CustomizeText("function(cellInfo) { return cellInfo.value + '%'; }")
+                            .CssClass("dept-rate-cell");
+                    })
+                )
+            </div>
+        </div>
+    }
+</div>

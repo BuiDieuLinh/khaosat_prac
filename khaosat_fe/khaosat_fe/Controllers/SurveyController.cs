@@ -56,7 +56,6 @@ namespace khaosat_fe.Controllers
             }
         }
 
-
         [HttpGet("paged")]
         public async Task<IActionResult> GetPagedSurveys([FromQuery] SurveyFilterDto filter)
         {
@@ -103,7 +102,6 @@ namespace khaosat_fe.Controllers
             }
         }
 
-
         public async Task<IActionResult> Detail(Guid id)
         {
             AttachBearerToken();
@@ -131,6 +129,33 @@ namespace khaosat_fe.Controllers
             }
         }
 
+        [AllowAnonymous]
+        [HttpGet("Survey/PublicDetail/{token}")]
+        public async Task<IActionResult> PublicDetail(string token)
+        {
+            try
+            {
+                var response = await _httpClient.GetAsync($"api/survey/public/{token}");
+                if (response.IsSuccessStatusCode)
+                {
+                    var detail = await response.Content.ReadFromJsonAsync<SurveyDetailViewModel>();
+                    if (detail != null)
+                    {
+                        ViewBag.PublicToken = token;
+                        return View(detail);
+                    }
+                }
+
+                TempData["ErrorMessage"] = "Khảo sát công khai không tồn tại hoặc đã hết hạn.";
+                return RedirectToAction("Index", "Home");
+            }
+            catch
+            {
+                TempData["ErrorMessage"] = "Đã xảy ra lỗi khi tải khảo sát công khai.";
+                return RedirectToAction("Index", "Home");
+            }
+        }
+
         [HttpPost]
         public async Task<IActionResult> Submit([FromBody] SurveySubmitViewModel model)
         {
@@ -146,10 +171,6 @@ namespace khaosat_fe.Controllers
                 if (Guid.TryParse(userIdStr, out Guid employeeId))
                 {
                     model.EmployeeId = employeeId;
-                }
-                else
-                {
-                    return Unauthorized("Không tìm thấy thông tin nhân viên hợp lệ.");
                 }
 
                 var response = await _httpClient.PostAsJsonAsync("api/survey/submit", model);
@@ -170,6 +191,31 @@ namespace khaosat_fe.Controllers
                     return StatusCode(409, new { message = msg });
                 }
                 return BadRequest("Failed to submit survey");
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ex.Message);
+            }
+        }
+
+        [AllowAnonymous]
+        [HttpPost("Survey/PublicSubmit")]
+        public async Task<IActionResult> PublicSubmit([FromBody] SurveySubmitViewModel model)
+        {
+            if (model == null || model.SurveyId == Guid.Empty)
+            {
+                return BadRequest("Dữ liệu nộp khảo sát không hợp lệ.");
+            }
+
+            try
+            {
+                var response = await _httpClient.PostAsJsonAsync("api/survey/public/submit", model);
+                if (response.IsSuccessStatusCode)
+                {
+                    return Ok(new { message = "Nộp khảo sát công khai thành công!" });
+                }
+                var errorContent = await response.Content.ReadAsStringAsync();
+                return BadRequest(errorContent);
             }
             catch (Exception ex)
             {
@@ -245,7 +291,7 @@ namespace khaosat_fe.Controllers
             }
         }
 
-        [HttpPut]
+        [HttpPatch]
         [Authorize(Roles = "Admin,Quản lý")]
         public async Task<IActionResult> UpdateNested(Guid id, [FromBody] SurveyCreateNestedViewModel model)
         {
@@ -257,7 +303,7 @@ namespace khaosat_fe.Controllers
             AttachBearerToken();
             try
             {
-                var response = await _httpClient.PutAsJsonAsync($"api/survey/{id}", model);
+                var response = await _httpClient.PatchAsJsonAsync($"api/survey/{id}", model);
                 if (response.IsSuccessStatusCode)
                 {
                     return Ok(new { message = "Survey updated successfully" });
@@ -311,6 +357,91 @@ namespace khaosat_fe.Controllers
             catch (Exception ex)
             {
                 return StatusCode(500, ex.Message);
+            }
+        }
+
+        [HttpPost("Survey/ChangeAccessType/{id}")]
+        [Authorize(Roles = "Admin,Quản lý")]
+        public async Task<IActionResult> ChangeAccessType(Guid id, [FromBody] ChangeAccessTypeViewModel model)
+        {
+            AttachBearerToken();
+            try
+            {
+                var response = await _httpClient.PutAsJsonAsync($"api/survey/{id}/access-type", model);
+                if (response.IsSuccessStatusCode)
+                {
+                    return Ok(new { message = "Đã cập nhật loại truy cập thành công." });
+                }
+                var errorMsg = await response.Content.ReadAsStringAsync();
+                return BadRequest(errorMsg);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ex.Message);
+            }
+        }
+
+        [HttpPost("Survey/ChangeAnonymousMode/{id}")]
+        [Authorize(Roles = "Admin,Quản lý")]
+        public async Task<IActionResult> ChangeAnonymousMode(Guid id, [FromBody] ChangeAnonymousModeViewModel model)
+        {
+            AttachBearerToken();
+            try
+            {
+                var response = await _httpClient.PutAsJsonAsync($"api/survey/{id}/anonymous-mode", model);
+                if (response.IsSuccessStatusCode)
+                {
+                    return Ok(new { message = "Đã cập nhật chế độ ẩn danh thành công." });
+                }
+                var errorMsg = await response.Content.ReadAsStringAsync();
+                return BadRequest(errorMsg);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ex.Message);
+            }
+        }
+
+        [HttpGet("Survey/Report/{id}")]
+        [Authorize(Roles = "Admin,Quản lý")]
+        public async Task<IActionResult> Report(Guid id)
+        {
+            AttachBearerToken();
+            try
+            {
+                var report = await _httpClient.GetFromJsonAsync<SurveyReportViewModel>($"api/survey/{id}/report");
+                if (report != null)
+                {
+                    return View(report);
+                }
+                TempData["ErrorMessage"] = "Không thể lấy dữ liệu báo cáo khảo sát.";
+                return RedirectToAction("Index");
+            }
+            catch
+            {
+                TempData["ErrorMessage"] = "Lỗi khi lấy báo cáo khảo sát.";
+                return RedirectToAction("Index");
+            }
+        }
+
+        [HttpGet("Survey/AuditLogs")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> AuditLogs([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10, [FromQuery] string? action = null, [FromQuery] string? search = null)
+        {
+            AttachBearerToken();
+            try
+            {
+                var queryParams = new List<string> { $"pageNumber={pageNumber}", $"pageSize={pageSize}" };
+                if (!string.IsNullOrWhiteSpace(action)) queryParams.Add($"action={Uri.EscapeDataString(action)}");
+                if (!string.IsNullOrWhiteSpace(search)) queryParams.Add($"search={Uri.EscapeDataString(search)}");
+
+                string queryString = "?" + string.Join("&", queryParams);
+                var logs = await _httpClient.GetFromJsonAsync<PagedResultViewModel<AuditLogViewModel>>($"api/survey/audit-logs{queryString}");
+                return View(logs ?? new PagedResultViewModel<AuditLogViewModel>());
+            }
+            catch
+            {
+                return View(new PagedResultViewModel<AuditLogViewModel>());
             }
         }
     }

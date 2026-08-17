@@ -9,8 +9,10 @@ namespace khaosat_api.DTOs
         [Required]
         public Guid SurveyId { get; set; }
 
-        [Required]
-        public Guid EmployeeId { get; set; }
+        public Guid? EmployeeId { get; set; }
+
+        public string? PublicToken { get; set; }
+        public string? CookieId { get; set; }
 
         [Required]
         public List<AnswerSubmitDto> Answers { get; set; } = new();

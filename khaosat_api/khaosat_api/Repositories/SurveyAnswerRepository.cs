@@ -39,6 +39,38 @@ namespace khaosat_api.Repositories
             return result;
         }
 
+        public List<SurveyAnswer> GetBySurveyId(Guid surveyId)
+        {
+            var result = new List<SurveyAnswer>();
+
+            using var conn = _factory.Create();
+            conn.Open();
+
+            const string sql = @"
+                SELECT a.Id, a.ResponseId, a.ElementId, a.OptionId, a.Value
+                FROM SurveyAnswer a
+                INNER JOIN SurveyResponse r ON a.ResponseId = r.Id
+                WHERE r.SurveyId = @SurveyId";
+
+            using var cmd = new SqlCommand(sql, conn);
+            cmd.Parameters.AddWithValue("@SurveyId", surveyId);
+
+            using var reader = cmd.ExecuteReader();
+            while (reader.Read())
+            {
+                result.Add(new SurveyAnswer
+                {
+                    Id = Guid.Parse(reader["Id"].ToString()!),
+                    ResponseId = Guid.Parse(reader["ResponseId"].ToString()!),
+                    ElementId = Guid.Parse(reader["ElementId"].ToString()!),
+                    OptionId = reader["OptionId"] == DBNull.Value ? null : (Guid?)Guid.Parse(reader["OptionId"].ToString()!),
+                    Value = reader["Value"] == DBNull.Value ? null : reader["Value"].ToString()
+                });
+            }
+
+            return result;
+        }
+
         public void Add(SurveyAnswer answer)
         {
             using var conn = _factory.Create();

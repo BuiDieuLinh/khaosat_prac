@@ -1,5 +1,5 @@
 @{
-    ViewData["Title"] = "Danh sách khảo sát";
+ViewData["Title"] = "Danh sách khảo sát";
 }
 
 @if (TempData["ErrorMessage"] != null)
@@ -10,7 +10,7 @@
     </div>
 }
 
-<div class="mb-3 d-flex justify-content-between align-items-center">
+<div class="mb-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
     <div>
         <h1 class="fw-bold text-dark mb-1">@ViewData["Title"]</h1>
         <p class="text-muted mb-0">Vui lòng chọn khảo sát khả dụng bên dưới để thực hiện.</p>
@@ -19,10 +19,10 @@
     {
         <div>
             @(Html.DevExtreme().Button()
-                .Text("Tạo khảo sát mới")
-                .Icon("add")
-                .Type(ButtonType.Default)
-                .OnClick("function() { window.location.href = '" + Url.Action("Create", "Survey") + "'; }")
+            .Text("Tạo khảo sát mới")
+            .Icon("add")
+            .Type(ButtonType.Default)
+            .OnClick("function() { window.location.href = '" + Url.Action("Create", "Survey") + "'; }")
             )
         </div>
     }
@@ -39,8 +39,8 @@
     .CardsPerRow(1)
     .Paging(p => p.PageSize(5))
     .Pager(p => p
-        .ShowPageSizeSelector(true)
-        .AllowedPageSizes(new[] { 5, 10, 20, 50 })
+    .ShowPageSizeSelector(true)
+    .AllowedPageSizes(new[] { 5, 10, 20, 50 })
         .ShowInfo(true)
     )
     .SearchPanel(s => s.Visible(true).Width(300).Placeholder("Tìm kiếm khảo sát..."))
@@ -54,16 +54,33 @@
                             <h5 class="card-title text-dark fw-bold mb-0" style="font-size: 1rem; letter-spacing: -0.01em; white-space: nowrap;"><%- card.data.Name %></h5>
                             <span class="text-muted small" style="font-size: 0.85rem;">#<%- card.data.Code %></span>
                             <% if (card.data.Status === 0) { %>
-                                <span class="badge bg-warning-subtle text-warning border border-warning-subtle px-2 py-1 rounded-pill">Bản nháp</span>
+                            <span class="custom-badge custom-badge-warning">Bản nháp</span>
                             <% } else if (card.data.Status === 1) { %>
-                                <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1 rounded-pill">Đang mở</span>
+                            <span class="custom-badge custom-badge-success">Đang mở</span>
                             <% } else { %>
-                                <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle px-2 py-1 rounded-pill">Đã đóng</span>
+                            <span class="custom-badge custom-badge-secondary">Đã đóng</span>
+                            <% } %>
+
+                            <% if (card.data.AccessType === 2) { %>
+                            <span class="custom-badge"><i class="dx-icon-globe me-1"></i>Công khai</span>
+                            <% } else { %>
+                            <span class="custom-badge"><i class="dx-icon-group me-1"></i>Nội bộ</span>
+                            <% } %>
+
+                            <% if (card.data.AnonymousMode) { %>
+                            <span class="custom-badge"><i class="dx-icon-find me-1"></i>Ẩn danh</span>
+                            <% } else { %>
+                            <span class="custom-badge"><i class="dx-icon-user me-1"></i>Định danh</span>
                             <% } %>
                         </div>
                         <div class="d-flex flex-row gap-3">
                             <span class="text-muted small" style="font-size: 0.85rem;">
-                                <i class="dx-icon-chart"></i> <%- card.data.CompletedCount %> / <%- card.data.TotalResponses %> responses
+                                <i class="dx-icon-chart"></i>                                                              
+                                <% if (Number(card.data.AccessType) === 2) { %>
+                                    <%- card.data.CompletedCount %> responses
+                                <% } else { %>
+                                    <%- card.data.CompletedCount %> / <%- card.data.TotalResponses %> responses
+                                 <% } %>
                             </span>
                             <span class="text-muted small" style="font-size: 0.85rem;">
                                 <i class="dx-icon-clock"></i> <%- card.data.StartDate ? DevExpress.localization.formatDate(new Date(card.data.StartDate), "dd/MM/yyyy HH:mm") : "N/A" %>
@@ -72,73 +89,89 @@
                     </div>
 
                     <div class="d-flex flex-row align-items-center gap-3" style="flex-shrink: 0;">
-                        <div class="d-flex flex-column justify-content-center align-items-center me-1">
-                            <p class="text-dark mb-0 fs-4"><%- card.data.CompletionRate %>%</p>
-                            <p class="text-muted mb-0 small" style="font-size: 0.8rem;">completion</p>
-                        </div>
+                        <% if (Number(card.data.AccessType) === 1) { %>
+                            <div class="d-flex flex-column justify-content-center align-items-center me-1">
+                                <p class="text-dark mb-0 fs-4">
+                                    <%- card.data.CompletionRate %>%
+                                </p>
+                                <p class="text-muted mb-0 small" style="font-size: 0.8rem;">
+                                    completion
+                                </p>
+                            </div>
+                         <% } %>
                         <div class="d-flex flex-row gap-2 justify-content-center align-items-center">
-                            <a class="btn btn-outline-primary px-3 py-2 btn-sm fw-semibold survey-btn-pill <%- card.data.Status != 1 ? 'disabled' : '' %>" href="/Survey/Detail/<%- card.data.Id %>" style="font-size: 0.85rem;">
-                                <i class="dx-icon-eyeopen"></i> Làm khảo sát
+                            <% if (card.data.AccessType === 2) { %>
+                            <a class="btn btn-outline-info px-3 py-2 btn-sm fw-semibold survey-btn-pill <%- card.data.Status != 1 ? 'disabled' : '' %>" href="/Survey/PublicDetail/<%- card.data.Id %>" style="font-size: 0.85rem;" target="_blank">
+                            <i class="dx-icon-globe"></i> Link Public
+                        </a>
+                        <% } %>
+                        <a class="btn btn-outline-primary px-3 py-2 btn-sm fw-semibold survey-btn-pill <%- card.data.Status != 1 ? 'disabled' : '' %>" href="/Survey/Detail/<%- card.data.Id %>" style="font-size: 0.85rem;">
+                        <i class="dx-icon-eyeopen"></i> Làm khảo sát
+                    </a>
+                    @if (User.IsInRole("Admin") || User.IsInRole("Manager"))
+                    {
+                        <div class="dropdown">
+                            <button class="btn btn-light btn-sm rounded-circle border-0 p-2 shadow-none" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Menu thao tác">
+                                <i class="dx-icon-overflow" style="font-size: 1.1rem; vertical-align: middle;"></i>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end shadow border-0" style="z-index: 9999;">
+                                <li>
+                                    <a class="dropdown-item py-2 px-3 d-flex align-items-center gap-2 text-primary" href="/Survey/Report/<%- card.data.Id %>">
+                                    <i class="dx-icon-chart text-primary"></i> Xem Báo Cáo
+                                </a>
+                            </li>
+                            <% if (card.data.Status !== 2 && card.data.CompletedCount === 0 && (card.data.Status === 0 || !card.data.StartDate || new Date(card.data.StartDate) > new Date())) { %>
+                            <li>
+                                <a class="dropdown-item py-2 px-3 d-flex align-items-center gap-2" href="/Survey/Edit/<%- card.data.Id %>">
+                                <i class="dx-icon-edit text-primary"></i> Edit
                             </a>
-                            @if (User.IsInRole("Admin") || User.IsInRole("Quản lý"))
-                            {
-                                <div class="dropdown">
-                                    <button class="btn btn-light btn-sm rounded-circle border-0 p-2 shadow-none" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Menu thao tác">
-                                        <i class="dx-icon-overflow" style="font-size: 1.1rem; vertical-align: middle;"></i>
-                                    </button>
-                                    <ul class="dropdown-menu dropdown-menu-end shadow border-0" style="z-index: 9999;">
-                                        <% if (card.data.Status !== 2 && card.data.CompletedCount === 0 && (card.data.Status === 0 || !card.data.StartDate || new Date(card.data.StartDate) > new Date())) { %>
-                                            <li>
-                                                <a class="dropdown-item py-2 px-3 d-flex align-items-center gap-2" href="/Survey/Edit/<%- card.data.Id %>">
-                                                    <i class="dx-icon-edit text-primary"></i> Edit
-                                                </a>
-                                            </li>
-                                        <% } else { %>
-                                            <li>
-                                                <div class="d-inline-block w-100" data-bs-toggle="tooltip" data-bs-placement="right" title="<%- card.data.Status === 2 ? 'Khảo sát đã được đóng.' : (card.data.CompletedCount > 0 ? 'Khảo sát đã có người tham gia nên không thể chỉnh sửa.' : 'Khảo sát đã bắt đầu nên không thể chỉnh sửa.') %>">
-                                                    <a class="dropdown-item py-2 px-3 d-flex align-items-center gap-2 disabled text-muted opacity-50" href="#" onclick="return false;">
-                                                        <i class="dx-icon-edit"></i> Edit
-                                                    </a>
-                                                </div>
-                                            </li>
-                                        <% } %>
-                                        <li>
-                                            <a class="dropdown-item py-2 px-3 d-flex align-items-center gap-2" href="#" onclick="Survey.Event.cloneSurvey('<%- card.data.Id %>'); return false;">
-                                                <i class="dx-icon-copy text-info"></i> Clone Survey
-                                            </a>
-                                        </li>
-                                        <% if (card.data.Status !== 2) { %>
-                                            <li>
-                                                <hr class="dropdown-divider my-1">
-                                            </li>
-                                            <li>
-                                                <a class="dropdown-item py-2 px-3 d-flex align-items-center gap-2 text-danger" href="#" onclick="Survey.Event.closeSurvey('<%- card.data.Id %>'); return false;">
-                                                    <i class="dx-icon-close text-danger"></i> Close Survey
-                                                </a>
-                                            </li>
-                                        <% } %>
-                                    </ul>
-                                </div>
-                            }
+                        </li>
+                        <% } else { %>
+                        <li>
+                            <div class="d-inline-block w-100" data-bs-toggle="tooltip" data-bs-placement="right" title="<%- card.data.Status === 2 ? 'Khảo sát đã được đóng.' : (card.data.CompletedCount > 0 ? 'Khảo sát đã có người tham gia nên không thể chỉnh sửa.' : 'Khảo sát đã bắt đầu nên không thể chỉnh sửa.') %>">
+                            <a class="dropdown-item py-2 px-3 d-flex align-items-center gap-2 disabled text-muted opacity-50" href="#" onclick="return false;">
+                                <i class="dx-icon-edit"></i> Edit
+                            </a>
                         </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        </text>)
-    )
+                    </li>
+                    <% } %>
+                    <li>
+                        <a class="dropdown-item py-2 px-3 d-flex align-items-center gap-2" href="#" onclick="Survey.Event.cloneSurvey('<%- card.data.Id %>'); return false;">
+                        <i class="dx-icon-copy text-info"></i> Clone Survey
+                    </a>
+                </li>
+                <% if (card.data.Status !== 2) { %>
+                <li>
+                    <hr class="dropdown-divider my-1">
+                </li>
+                <li>
+                    <a class="dropdown-item py-2 px-3 d-flex align-items-center gap-2 text-danger" href="#" onclick="Survey.Event.closeSurvey('<%- card.data.Id %>'); return false;">
+                    <i class="dx-icon-close text-danger"></i> Close Survey
+                </a>
+            </li>
+            <% } %>
+        </ul>
+    </div>
+    }
+</div>
+</div>
+</div>
+</div>
+</div>
+</text>)
+)
 
 <script>
     window.Survey = window.Survey || {};
     window.Survey.Urls = {
-        clone: "@Url.Action("Clone", "Survey")/{id}",
-        close: "@Url.Action("Close", "Survey")/{id}"
+    clone: "@Url.Action("Clone", "Survey")/{id}",
+    close: "@Url.Action("Close", "Survey")/{id}"
     };
 </script>
 
 @section Scripts {
-    <script src="~/js/common.js" asp-append-version="true"></script>
-    <script src="~/js/survey/survey-constants.js" asp-append-version="true"></script>
-    <script src="~/js/survey/survey-api.js" asp-append-version="true"></script>
-    <script src="~/js/survey/survey-page.js" asp-append-version="true"></script>
+<script src="~/js/common.js" asp-append-version="true"></script>
+<script src="~/js/survey/survey-constants.js" asp-append-version="true"></script>
+<script src="~/js/survey/survey-api.js" asp-append-version="true"></script>
+<script src="~/js/survey/survey-page.js" asp-append-version="true"></script>
 }

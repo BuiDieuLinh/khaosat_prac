@@ -140,7 +140,7 @@
                         @(Html.DevExtreme().DateBox()
                             .ID("surveyStartDate")
                             .Type(DateBoxType.DateTime)
-                            .DisplayFormat("dd/MM/yyyy HH:mm")
+                            .DisplayFormat("dd/MM/yyyy HH:mm")   
                             .Placeholder("Chọn ngày bắt đầu")
                             .Value(DateTime.Now)
                         )
@@ -175,6 +175,28 @@
                             .DisplayExpr("Text")
                             .Value((byte)1)
                         )
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label text-secondary small">Loại truy cập (Access Type)</label>
+                        @(Html.DevExtreme().SelectBox()
+                            .ID("surveyAccessType")
+                            .DataSource(new[] {
+                                new { Value = 1, Text = "Internal (Nội bộ hệ thống)" },
+                                new { Value = 2, Text = "Public (Công khai qua Link)" }
+                            })
+                            .ValueExpr("Value")
+                            .DisplayExpr("Text")
+                            .Value(1)
+                        )
+                    </div>
+                    <div class="col-md-4 d-flex align-items-end">
+                        <div class="p-2 border rounded-3 bg-light w-100">
+                            @(Html.DevExtreme().CheckBox()
+                                .ID("surveyAnonymousMode")
+                                .Text("Bật chế độ Ẩn danh (Internal Anonymous)")
+                                .Value(false)
+                            )
+                        </div>
                     </div>
                 </div>
             </div>

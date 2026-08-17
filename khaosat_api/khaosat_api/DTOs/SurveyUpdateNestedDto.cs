@@ -5,12 +5,8 @@ using System.ComponentModel.DataAnnotations;
 
 namespace khaosat_api.DTOs
 {
-    public class SurveyCreateNestedDto : IValidatableObject
+    public class SurveyUpdateNestedDto : IValidatableObject
     {
-        [Required]
-        [StringLength(50)]
-        public string Code { get; set; } = string.Empty;
-
         [Required]
         [StringLength(255)]
         public string Name { get; set; } = string.Empty;
@@ -41,10 +37,10 @@ namespace khaosat_api.DTOs
             }
         }
 
-        public List<SurveyElementCreateNestedDto> Elements { get; set; } = new();
+        public List<SurveyElementUpdateNestedDto> Elements { get; set; } = new();
     }
 
-    public class SurveyElementCreateNestedDto
+    public class SurveyElementUpdateNestedDto
     {
         [Required]
         public string FieldName { get; set; } = string.Empty;
@@ -54,10 +50,10 @@ namespace khaosat_api.DTOs
         [Required]
         public string ConfigType { get; set; } = string.Empty;
 
-        public List<SurveyElementOptionCreateNestedDto> Options { get; set; } = new();
+        public List<SurveyElementOptionUpdateNestedDto> Options { get; set; } = new();
     }
 
-    public class SurveyElementOptionCreateNestedDto
+    public class SurveyElementOptionUpdateNestedDto
     {
         [Required]
         public string Value { get; set; } = string.Empty;

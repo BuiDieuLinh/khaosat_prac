@@ -1,0 +1,86 @@
+@model khaosat_fe.Models.PagedResultViewModel<khaosat_fe.Models.AuditLogViewModel>
+
+@{
+    ViewData["Title"] = "Nhật ký hệ thống (Audit Logs)";
+}
+
+<div class="mb-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <div>
+        <h1 class="fw-bold text-dark mb-1">@ViewData["Title"]</h1>
+        <p class="text-muted mb-0">Theo dõi toàn bộ lịch sử tạo, sửa, đóng khảo sát và thay đổi thiết lập hệ thống.</p>
+    </div>
+    <a href="@Url.Action("Index", "Survey")" class="btn btn-outline-secondary">
+        <i class="dx-icon-arrowleft me-1"></i> Quay lại danh sách
+    </a>
+</div>
+
+<div class="card shadow-sm border-0 rounded-3">
+    <div class="card-body p-4">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th style="width: 160px;">Thời gian</th>
+                        <th style="width: 140px;">Người thực hiện</th>
+                        <th style="width: 180px;">Hành động</th>
+                        <th style="width: 120px;">Đối tượng</th>
+                        <th>Giá trị cũ / Giá trị mới</th>
+                        <th style="width: 130px;">IP Address</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Data == null || !Model.Data.Any())
+                    {
+                        <tr>
+                            <td colspan="6" class="text-center py-4 text-muted">Chưa có nhật ký hoạt động nào.</td>
+                        </tr>
+                    }
+                    else
+                    {
+                        @foreach (var log in Model.Data)
+                        {
+                            <tr>
+                                <td class="small text-muted">@log.CreatedAt.ToString("dd/MM/yyyy HH:mm:ss")</td>
+                                <td>
+                                    <span class="fw-semibold text-dark">@(log.UserName ?? "System")</span>
+                                </td>
+                                <td>
+                                    @if (log.Action.Contains("Create"))
+                                    {
+                                        <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1 rounded-pill">@log.Action</span>
+                                    }
+                                    else if (log.Action.Contains("UPDATE") || log.Action.Contains("CHANGE"))
+                                    {
+                                        <span class="badge bg-warning-subtle text-warning border border-warning-subtle px-2 py-1 rounded-pill">@log.Action</span>
+                                    }
+                                    else if (log.Action.Contains("CLOSE"))
+                                    {
+                                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1 rounded-pill">@log.Action</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-info-subtle text-info border border-info-subtle px-2 py-1 rounded-pill">@log.Action</span>
+                                    }
+                                </td>
+                                <td>
+                                    <span class="small font-monospace">@log.EntityType (@log.EntityId?.Substring(0, Math.Min(8, log.EntityId?.Length ?? 0)))</span>
+                                </td>
+                                <td class="small">
+                                    @if (!string.IsNullOrEmpty(log.OldValue))
+                                    {
+                                        <div class="text-danger"><s>Cũ: @log.OldValue</s></div>
+                                    }
+                                    @if (!string.IsNullOrEmpty(log.NewValue))
+                                    {
+                                        <div class="text-success fw-semibold">Mới: @log.NewValue</div>
+                                    }
+                                </td>
+                                <td class="small text-muted font-monospace">@(log.IpAddress ?? "N/A")</td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

@@ -30,6 +30,8 @@ namespace khaosat_api.Models
         }
         public SurveyStatus Status { get; set; }
         public int? MaxAttempts { get; set; }
+        public int AccessType { get; set; } = 1; // 1: Internal, 2: Public, 3: Invitation
+        public bool AnonymousMode { get; set; } = false;
         public DateTime CreatedDate { get; set; }
         public DateTime? UpdatedDate { get; set; }
     }

@@ -22,7 +22,7 @@
     Survey.Api.getErrorMessage = getErrorMessage;
     Survey.Api.saveSurvey = function (payload) {
         const urls = Survey.Urls || {};
-        return Common.Utils.callApi(urls.saveSurvey || urls.createNested, urls.saveSurvey ? "PUT" : "POST", payload);
+        return Common.Utils.callApi(urls.saveSurvey || urls.createNested, urls.saveSurvey ? "PATCH" : "POST", payload);
     };
     Survey.Api.submitResponse = function (payload) {
         return Common.Utils.callApi((Survey.Urls || {}).submit, "POST", payload);

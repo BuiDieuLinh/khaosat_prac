@@ -1,0 +1,197 @@
+@model khaosat_fe.Models.SurveyDetailViewModel
+@using System.Text.Json
+@using DevExtreme.AspNet.Mvc
+
+@{
+    ViewData["Title"] = Model.Name + " - Public Survey";
+    Layout = "_Layout";
+}
+
+<div class="container py-4" style="max-width: 900px;">
+    <div class="card shadow border-0 mb-4 rounded-3">
+        <div class="card-body p-4 text-center bg-primary text-white rounded-top-3">
+            <span class="badge bg-light text-primary mb-2 px-3 py-1 rounded-pill fw-bold">KHẢO SÁT CÔNG KHẢI</span>
+            <h1 class="h3 fw-bold mb-2">@Model.Name</h1>
+            <p class="mb-0 opacity-90">@Model.Description</p>
+        </div>
+        <div class="card-footer bg-light border-0 py-3 px-4 d-flex justify-content-between text-muted small">
+            <span>Mã khảo sát: <strong>@Model.Code</strong></span>
+            @if (Model.EndDate.HasValue)
+            {
+                <span>Hạn chót: <strong>@Model.EndDate.Value.ToString("dd/MM/yyyy HH:mm")</strong></span>
+            }
+        </div>
+    </div>
+
+    <div class="card shadow-sm mb-4 border-0 rounded-3">
+        <div class="card-body p-4">
+            <h5 class="card-title fw-bold text-dark border-bottom pb-3 mb-4">
+                <i class="dx-icon-doc text-primary me-2"></i>Nội dung câu hỏi khảo sát
+            </h5>
+            <form id="publicSurveyForm">
+                <input type="hidden" id="publicSurveyId" value="@Model.Id" />
+                <input type="hidden" id="publicToken" value="@ViewBag.PublicToken" />
+
+                @{ int questionIndex = 1; }
+                @foreach (var element in Model.Elements.OrderBy(x => x.SortOrder))
+                {
+                    Dictionary<string, object>? config = null;
+                    try
+                    {
+                        if (!string.IsNullOrEmpty(element.ConfigType))
+                        {
+                            config = JsonSerializer.Deserialize<Dictionary<string, object>>(element.ConfigType);
+                        }
+                    }
+                    catch { }
+
+                    string caption = config != null && config.ContainsKey("Caption") ? config["Caption"]?.ToString() ?? element.FieldName : element.FieldName;
+                    string helperText = config != null && config.ContainsKey("Helper") ? config["Helper"]?.ToString() ?? "" : "";
+                    bool isRequired = config != null && config.ContainsKey("AllowNull") && config["AllowNull"]?.ToString() == "False";
+                    string dataType = config != null && config.ContainsKey("DataType") ? config["DataType"]?.ToString() ?? "TextBox" : "TextBox";
+                    bool isMultiSelect = config != null && config.ContainsKey("IsMultiSelect") && config["IsMultiSelect"]?.ToString() == "True";
+
+                    <div class="mb-4 p-3 border rounded-3 bg-white" id="container_@element.Id">
+                        <label class="form-label text-dark fw-bold mb-1">
+                            Câu @(questionIndex++): @caption
+                            @if (isRequired)
+                            {
+                                <span class="text-danger">*</span>
+                            }
+                        </label>
+                        @if (!string.IsNullOrEmpty(helperText))
+                        {
+                            <p class="text-muted small mb-3">@helperText</p>
+                        }
+
+                        <div class="mt-2">
+                            @if (dataType == "Radio" || (dataType == "Select" && !isMultiSelect))
+                            {
+                                @(Html.DevExtreme().RadioGroup()
+                                    .ID("element_" + element.Id)
+                                    .DataSource(element.Options.Where(o => o.IsActive).OrderBy(o => o.SortOrder))
+                                    .ValueExpr("Value")
+                                    .DisplayExpr("DisplayText")
+                                )
+                            }
+                            else if (dataType == "Checkbox" || (dataType == "Select" && isMultiSelect))
+                            {
+                                @(Html.DevExtreme().List()
+                                    .ID("element_" + element.Id)
+                                    .DataSource(element.Options.Where(o => o.IsActive).OrderBy(o => o.SortOrder))
+                                    .KeyExpr("Value")
+                                    .DisplayExpr("DisplayText")
+                                    .ShowSelectionControls(true)
+                                    .SelectionMode(ListSelectionMode.Multiple)
+                                    .Height(150)
+                                )
+                            }
+                            else if (dataType == "TextArea")
+                            {
+                                @(Html.DevExtreme().TextArea()
+                                    .ID("element_" + element.Id)
+                                    .Placeholder("Nhập câu trả lời chi tiết của bạn...")
+                                    .Height(100)
+                                )
+                            }
+                            else if (dataType == "Number")
+                            {
+                                @(Html.DevExtreme().NumberBox()
+                                    .ID("element_" + element.Id)
+                                    .Placeholder("Nhập giá trị số...")
+                                )
+                            }
+                            else if (dataType == "Datetime" || dataType == "Date")
+                            {
+                                @(Html.DevExtreme().DateBox()
+                                    .ID("element_" + element.Id)
+                                    .Type(dataType == "Datetime" ? DateBoxType.DateTime : DateBoxType.Date)
+                                    .DisplayFormat(dataType == "Datetime" ? "dd/MM/yyyy HH:mm" : "dd/MM/yyyy")
+                                )
+                            }
+                            else
+                            {
+                                @(Html.DevExtreme().TextBox()
+                                    .ID("element_" + element.Id)
+                                    .Placeholder("Nhập câu trả lời của bạn...")
+                                )
+                            }
+                        </div>
+                    </div>
+                }
+
+                <div class="mt-4 pt-3 border-top text-end">
+                    <button type="button" class="btn btn-success btn-lg px-5 fw-bold" id="btnSubmitPublic">
+                        <i class="dx-icon-send me-2"></i>Gửi Khảo Sát
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            let deviceId = localStorage.getItem("survey_device_id");
+            if (!deviceId) {
+                deviceId = "dev_" + Math.random().toString(36).substring(2, 15) + Date.now().toString(36);
+                localStorage.setItem("survey_device_id", deviceId);
+            }
+
+            $("#btnSubmitPublic").click(function() {
+                const surveyId = $("#publicSurveyId").val();
+                const token = $("#publicToken").val();
+
+                const answers = [];
+                @foreach (var element in Model.Elements)
+                {
+                    <text>
+                    (function() {
+                        const elemId = "@element.Id";
+                        const $elem = $("#element_" + elemId);
+                        if ($elem.length) {
+                            let val = null;
+                            const listInst = $elem.data("dxList");
+                            const radioInst = $elem.data("dxRadioGroup");
+                            const textInst = $elem.data("dxTextBox") || $elem.data("dxTextArea") || $elem.data("dxNumberBox") || $elem.data("dxDateBox");
+
+                            if (listInst) val = listInst.option("selectedItemKeys");
+                            else if (radioInst) val = radioInst.option("value");
+                            else if (textInst) val = textInst.option("value");
+
+                            if (val !== null && val !== undefined && val !== "") {
+                                const vals = Array.isArray(val) ? val : [val];
+                                vals.forEach(v => {
+                                    answers.push({ elementId: elemId, value: String(v) });
+                                });
+                            }
+                        }
+                    })();
+                    </text>
+                }
+
+                const submitData = {
+                    surveyId: surveyId,
+                    publicToken: token,
+                    deviceFingerprint: deviceId,
+                    answers: answers
+                };
+
+                $.ajax({
+                    url: "/Survey/PublicSubmit",
+                    type: "POST",
+                    contentType: "application/json",
+                    data: JSON.stringify(submitData),
+                    success: function(res) {
+                        alert("Cảm ơn bạn đã thực hiện khảo sát công khai!");
+                        window.location.reload();
+                    },
+                    error: function(xhr) {
+                        alert("Lỗi nộp khảo sát: " + (xhr.responseJSON?.message || xhr.responseText || "Vui lòng thử lại."));
+                    }
+                });
+            });
+        });
+    </script>
+}

@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using khaosat_api.DTOs;
 using khaosat_api.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
 
 namespace khaosat_api.Controllers
 {
@@ -17,11 +18,16 @@ namespace khaosat_api.Controllers
             _surveyService = surveyService;
         }
 
+        private string? GetCurrentUsername()
+        {
+            return User.FindFirst(ClaimTypes.Name)?.Value ?? User.FindFirst(ClaimTypes.Email)?.Value ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        }
+
         [HttpGet]
         public IActionResult GetSurveys()
         {
             var userId = CurrentUserId;
-            var userIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (Guid.TryParse(userIdClaim, out Guid parsedId))
             {
                 userId = parsedId;
@@ -45,7 +51,7 @@ namespace khaosat_api.Controllers
         public IActionResult GetSurveyDetail(Guid id)
         {
             Guid? currentUserId = null;
-            var userIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (Guid.TryParse(userIdClaim, out Guid parsedId))
             {
                 currentUserId = parsedId;
@@ -70,6 +76,25 @@ namespace khaosat_api.Controllers
             }
         }
 
+        [AllowAnonymous]
+        [HttpGet("public/{token}")]
+        public IActionResult GetPublicSurveyDetail(string token)
+        {
+            try
+            {
+                var survey = _surveyService.GetPublicSurveyDetail(token);
+                if (survey == null)
+                {
+                    return NotFound(new { message = "Khảo sát không tồn tại hoặc không khả dụng." });
+                }
+                return Ok(survey);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
         [HttpPost("submit")]
         public IActionResult SubmitSurvey(SurveySubmitDto dto)
         {
@@ -78,7 +103,7 @@ namespace khaosat_api.Controllers
                 return BadRequest(ModelState);
             }
 
-            var userIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (Guid.TryParse(userIdClaim, out Guid employeeId))
             {
                 dto.EmployeeId = employeeId;
@@ -90,7 +115,7 @@ namespace khaosat_api.Controllers
 
             try
             {
-                _surveyService.SubmitSurvey(dto);
+                _surveyService.SubmitSurvey(dto, GetCurrentUsername(), GetClientIpAddress(), GetUserAgent());
                 return Ok(new { message = "Survey submitted successfully" });
             }
             catch (InvalidOperationException ex)
@@ -103,6 +128,26 @@ namespace khaosat_api.Controllers
                 {
                     return StatusCode(StatusCodes.Status409Conflict, new { message = "Bạn đã hết số lần làm khảo sát" });
                 }
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        [AllowAnonymous]
+        [HttpPost("public/submit")]
+        public IActionResult SubmitPublicSurvey(SurveySubmitDto dto)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            try
+            {
+                _surveyService.SubmitPublicSurvey(dto, GetClientIpAddress(), GetUserAgent());
+                return Ok(new { message = "Public survey submitted successfully" });
+            }
+            catch (InvalidOperationException ex)
+            {
                 return BadRequest(new { message = ex.Message });
             }
         }
@@ -120,8 +165,8 @@ namespace khaosat_api.Controllers
         }
 
         [Authorize(Roles = "Admin,Quản lý")]
-        [HttpPut("{id}")]
-        public IActionResult Update(Guid id, SurveyCreateNestedDto dto)
+        [HttpPatch("{id}")]
+        public IActionResult Update(Guid id, [FromBody] SurveyUpdateNestedDto dto)
         {
             if (!ModelState.IsValid)
             {
@@ -132,6 +177,46 @@ namespace khaosat_api.Controllers
             {
                 _surveyService.UpdateNested(id, dto);
                 return Ok(new { message = "Survey updated successfully" });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        [Authorize(Roles = "Admin,Quản lý")]
+        [HttpPut("{id}/access-type")]
+        public IActionResult ChangeAccessType(Guid id, [FromBody] ChangeAccessTypeDto dto)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            try
+            {
+                _surveyService.ChangeAccessType(id, dto.AccessType);
+                return Ok(new { message = "Access type updated successfully" });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        [Authorize(Roles = "Admin,Quản lý")]
+        [HttpPut("{id}/anonymous-mode")]
+        public IActionResult ChangeAnonymousMode(Guid id, [FromBody] ChangeAnonymousModeDto dto)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            try
+            {
+                _surveyService.ChangeAnonymousMode(id, dto.AnonymousMode);
+                return Ok(new { message = "Anonymous mode updated successfully" });
             }
             catch (InvalidOperationException ex)
             {
@@ -167,6 +252,29 @@ namespace khaosat_api.Controllers
             {
                 return BadRequest(new { message = ex.Message });
             }
+        }
+
+        [Authorize(Roles = "Admin,Quản lý")]
+        [HttpGet("{id}/report")]
+        public IActionResult GetSurveyReport(Guid id)
+        {
+            try
+            {
+                var report = _surveyService.GetSurveyReport(id);
+                return Ok(report);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        [Authorize(Roles = "Admin")]
+        [HttpGet("audit-logs")]
+        public IActionResult GetAuditLogs([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10, [FromQuery] string? action = null, [FromQuery] string? search = null)
+        {
+            var logs = _surveyService.GetAuditLogs(pageNumber, pageSize, action, search);
+            return Ok(logs);
         }
     }
 }

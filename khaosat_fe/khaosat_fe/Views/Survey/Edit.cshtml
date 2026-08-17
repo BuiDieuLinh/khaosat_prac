@@ -192,6 +192,28 @@
                             .Value(Model.Status)
                         )
                     </div>
+                    <div class="col-md-4">
+                        <label class="form-label text-secondary small">Loại truy cập (Access Type)</label>
+                        @(Html.DevExtreme().SelectBox()
+                            .ID("surveyAccessType")
+                            .DataSource(new[] {
+                                new { Value = 1, Text = "Internal (Nội bộ hệ thống)" },
+                                new { Value = 2, Text = "Public (Công khai qua Link)" }
+                            })
+                            .ValueExpr("Value")
+                            .DisplayExpr("Text")
+                            .Value(Model.AccessType)
+                        )
+                    </div>
+                    <div class="col-md-4 d-flex align-items-end">
+                        <div class="p-2 border rounded-3 bg-light w-100">
+                            @(Html.DevExtreme().CheckBox()
+                                .ID("surveyAnonymousMode")
+                                .Text("Bật chế độ Ẩn danh (Internal Anonymous)")
+                                .Value(Model.AnonymousMode)
+                            )
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

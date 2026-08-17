@@ -6,6 +6,7 @@ using khaosat_api.Services.Interfaces;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
@@ -65,6 +66,8 @@ builder.Services.AddCors(options =>
     });
 });
 
+builder.Services.AddHttpContextAccessor();
+
 builder.Services.AddScoped<SqlConnectionFactory>();
 
 // Repositories
@@ -75,10 +78,21 @@ builder.Services.AddScoped<ISurveyResponseRepository, SurveyResponseRepository>(
 builder.Services.AddScoped<ISurveyAnswerRepository, SurveyAnswerRepository>();
 builder.Services.AddScoped<IEmployeeRepository, EmployeeRepository>();
 builder.Services.AddScoped<ISurveyTargetRepository, SurveyTargetRepository>();
+builder.Services.AddScoped<ISurveyParticipantRepository, SurveyParticipantRepository>();
+builder.Services.AddScoped<ISurveyAccessRepository, SurveyAccessRepository>();
+builder.Services.AddScoped<IAuditLogRepository, AuditLogRepository>();
 
 // Services
 builder.Services.AddScoped<ISurveyService, SurveyService>();
 builder.Services.AddScoped<IEmployeeService, EmployeeService>();
+
+
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders =
+        ForwardedHeaders.XForwardedFor |
+        ForwardedHeaders.XForwardedProto;
+});
 
 // Configure JWT Authentication
 var secretKey = builder.Configuration["Jwt:Secret"] ?? "SuperSecretKeyMustBeAtLeast32BytesLong1234567890!";
@@ -150,6 +164,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+app.UseForwardedHeaders();
 app.UseHttpsRedirection();
 
 app.UseAuthentication();

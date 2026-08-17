@@ -47,7 +47,8 @@ namespace khaosat_api.Repositories
                     EndDate = reader["EndDate"] == DBNull.Value ? null : (DateTime?)Convert.ToDateTime(reader["EndDate"]),
                     Status = (SurveyStatus)Convert.ToByte(reader["Status"]),
                     MaxAttempts = HasColumn(reader, "MaxAttempts") && reader["MaxAttempts"] != DBNull.Value ? Convert.ToInt32(reader["MaxAttempts"]) : null,
-                    CreatedDate = Convert.ToDateTime(reader["CreatedDate"]),
+                    AccessType = HasColumn(reader, "AccessType") && reader["AccessType"] != DBNull.Value ? Convert.ToInt32(reader["AccessType"]) : 1,
+                    AnonymousMode = HasColumn(reader, "AnonymousMode") && reader["AnonymousMode"] != DBNull.Value && Convert.ToBoolean(reader["AnonymousMode"]),
                     UpdatedDate = reader["UpdatedDate"] == DBNull.Value ? null : (DateTime?)Convert.ToDateTime(reader["UpdatedDate"])
                 });
             }
@@ -157,7 +158,7 @@ namespace khaosat_api.Repositories
 
             string querySql = $@"
                 SELECT s.Id, s.Code, s.Name, s.Description, s.StartDate, s.EndDate,
-                       s.Status, s.MaxAttempts, s.CreatedDate, s.UpdatedDate
+                       s.Status, s.MaxAttempts, s.AccessType, s.AnonymousMode, s.CreatedDate, s.UpdatedDate
                 FROM Survey s
                 {whereSql}
                 ORDER BY {sortColumn} {sortDirection}, s.Id ASC
@@ -183,7 +184,9 @@ namespace khaosat_api.Repositories
                     EndDate = reader["EndDate"] == DBNull.Value ? null : Convert.ToDateTime(reader["EndDate"]),
                     Status = (SurveyStatus)Convert.ToByte(reader["Status"]),
                     MaxAttempts = reader["MaxAttempts"] == DBNull.Value ? null : Convert.ToInt32(reader["MaxAttempts"]),
-                    CreatedDate = Convert.ToDateTime(reader["CreatedDate"]),
+                    AccessType = HasColumn(reader, "AccessType") && reader["AccessType"] != DBNull.Value ? Convert.ToInt32(reader["AccessType"]) : 1,
+                    AnonymousMode = HasColumn(reader, "AnonymousMode") && reader["AnonymousMode"] != DBNull.Value && Convert.ToBoolean(reader["AnonymousMode"]),
+                    
                     UpdatedDate = reader["UpdatedDate"] == DBNull.Value ? null : Convert.ToDateTime(reader["UpdatedDate"])
                 });
             }
@@ -212,7 +215,8 @@ namespace khaosat_api.Repositories
                     EndDate = reader["EndDate"] == DBNull.Value ? null : (DateTime?)Convert.ToDateTime(reader["EndDate"]),
                     Status = (SurveyStatus)Convert.ToByte(reader["Status"]),
                     MaxAttempts = HasColumn(reader, "MaxAttempts") && reader["MaxAttempts"] != DBNull.Value ? Convert.ToInt32(reader["MaxAttempts"]) : null,
-                    CreatedDate = Convert.ToDateTime(reader["CreatedDate"]),
+                    AccessType = HasColumn(reader, "AccessType") && reader["AccessType"] != DBNull.Value ? Convert.ToInt32(reader["AccessType"]) : 1,
+                    AnonymousMode = HasColumn(reader, "AnonymousMode") && reader["AnonymousMode"] != DBNull.Value && Convert.ToBoolean(reader["AnonymousMode"]),
                     UpdatedDate = reader["UpdatedDate"] == DBNull.Value ? null : (DateTime?)Convert.ToDateTime(reader["UpdatedDate"])
                 };
             }
@@ -228,11 +232,11 @@ namespace khaosat_api.Repositories
             const string sql = @"
                 INSERT INTO Survey
                 (
-                    Id, Code, Name, Description, StartDate, EndDate, Status, MaxAttempts, CreatedDate, UpdatedDate
+                    Id, Code, Name, Description, StartDate, EndDate, Status, MaxAttempts, AccessType, AnonymousMode, CreatedDate, UpdatedDate
                 )
                 VALUES
                 (
-                    @Id, @Code, @Name, @Description, @StartDate, @EndDate, @Status, @MaxAttempts, @CreatedDate, @UpdatedDate
+                    @Id, @Code, @Name, @Description, @StartDate, @EndDate, @Status, @MaxAttempts, @AccessType, @AnonymousMode, @CreatedDate, @UpdatedDate
                 )";
 
             using var cmd = new SqlCommand(sql, conn);
@@ -245,7 +249,9 @@ namespace khaosat_api.Repositories
             cmd.Parameters.AddWithValue("@EndDate", (object?)survey.EndDate ?? DBNull.Value);
             cmd.Parameters.AddWithValue("@Status", survey.Status);
             cmd.Parameters.AddWithValue("@MaxAttempts", (object?)survey.MaxAttempts ?? DBNull.Value);
-            cmd.Parameters.AddWithValue("@CreatedDate", survey.CreatedDate);
+            cmd.Parameters.AddWithValue("@AccessType", survey.AccessType);
+            cmd.Parameters.AddWithValue("@AnonymousMode", survey.AnonymousMode);
+            cmd.Parameters.AddWithValue("@CreatedDate", (object?)survey.CreatedDate ?? DBNull.Value);
             cmd.Parameters.AddWithValue("@UpdatedDate", (object?)survey.UpdatedDate ?? DBNull.Value);
 
             cmd.ExecuteNonQuery();
@@ -265,6 +271,34 @@ namespace khaosat_api.Repositories
             cmd.ExecuteNonQuery();
         }
 
+        public void UpdateAccessType(Guid id, int accessType)
+        {
+            using var conn = _factory.Create();
+            conn.Open();
+
+            const string sql = "UPDATE Survey SET AccessType = @AccessType, UpdatedDate = @UpdatedDate WHERE Id = @Id";
+            using var cmd = new SqlCommand(sql, conn);
+            cmd.Parameters.AddWithValue("@Id", id);
+            cmd.Parameters.AddWithValue("@AccessType", accessType);
+            cmd.Parameters.AddWithValue("@UpdatedDate", DateTime.Now);
+
+            cmd.ExecuteNonQuery();
+        }
+
+        public void UpdateAnonymousMode(Guid id, bool anonymousMode)
+        {
+            using var conn = _factory.Create();
+            conn.Open();
+
+            const string sql = "UPDATE Survey SET AnonymousMode = @AnonymousMode, UpdatedDate = @UpdatedDate WHERE Id = @Id";
+            using var cmd = new SqlCommand(sql, conn);
+            cmd.Parameters.AddWithValue("@Id", id);
+            cmd.Parameters.AddWithValue("@AnonymousMode", anonymousMode);
+            cmd.Parameters.AddWithValue("@UpdatedDate", DateTime.Now);
+
+            cmd.ExecuteNonQuery();
+        }
+
         public void Update(Survey survey)
         {
             using var conn = _factory.Create();
@@ -279,6 +313,8 @@ namespace khaosat_api.Repositories
                     EndDate = @EndDate,
                     Status = @Status,
                     MaxAttempts = @MaxAttempts,
+                    AccessType = @AccessType,
+                    AnonymousMode = @AnonymousMode,
                     UpdatedDate = @UpdatedDate
                 WHERE Id = @Id";
 
@@ -292,6 +328,8 @@ namespace khaosat_api.Repositories
             cmd.Parameters.AddWithValue("@EndDate", (object?)survey.EndDate ?? DBNull.Value);
             cmd.Parameters.AddWithValue("@Status", survey.Status);
             cmd.Parameters.AddWithValue("@MaxAttempts", (object?)survey.MaxAttempts ?? DBNull.Value);
+            cmd.Parameters.AddWithValue("@AccessType", survey.AccessType);
+            cmd.Parameters.AddWithValue("@AnonymousMode", survey.AnonymousMode);
             cmd.Parameters.AddWithValue("@UpdatedDate", (object?)survey.UpdatedDate ?? DBNull.Value);
 
             cmd.ExecuteNonQuery();

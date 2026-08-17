@@ -20,12 +20,26 @@ namespace khaosat_fe.Handlers
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
             var httpContext = _httpContextAccessor.HttpContext;
-            var user = httpContext?.User;
-            var token = user?.FindFirst("Token")?.Value;
-
-            if (!string.IsNullOrEmpty(token))
+            if (httpContext != null)
             {
-                request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+                var user = httpContext.User;
+                var token = user?.FindFirst("Token")?.Value;
+
+                if (!string.IsNullOrEmpty(token))
+                {
+                    request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+                }
+
+                if (httpContext.Request.Headers.TryGetValue("User-Agent", out var userAgent) && !string.IsNullOrWhiteSpace(userAgent))
+                {
+                    request.Headers.TryAddWithoutValidation("User-Agent", (string?)userAgent);
+                }
+
+                var clientIp = httpContext.Connection.RemoteIpAddress?.ToString();
+                if (!string.IsNullOrEmpty(clientIp))
+                {
+                    request.Headers.TryAddWithoutValidation("X-Forwarded-For", clientIp);
+                }
             }
 
             var response = await base.SendAsync(request, cancellationToken);

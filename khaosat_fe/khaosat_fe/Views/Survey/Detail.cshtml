@@ -27,6 +27,14 @@ ViewData["Title"] = Model.Name;
     </div>
 </div>
 
+@if (Model.AnonymousMode)
+{
+    <div class="alert alert-info border-info shadow-sm mb-4">
+        <h6 class="alert-heading fw-bold mb-1"><i class="dx-icon-find me-2"></i> Khảo sát này là ẨN DANH (Internal Anonymous Survey)</h6>
+        <p class="mb-0 small">Hệ thống ghi nhận trạng thái đã tham gia của bạn để quản lý lượt làm, tuy nhiên danh tính cá nhân sẽ <strong>KHÔNG được lưu</strong> cùng bài làm trong cơ sở dữ liệu.</p>
+    </div>
+}
+
 <!-- Thông tin người thực hiện -->
 <div class="card shadow-sm mb-4">
     <div class="card-body p-4">

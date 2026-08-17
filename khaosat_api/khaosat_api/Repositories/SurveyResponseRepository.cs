@@ -30,7 +30,7 @@ namespace khaosat_api.Repositories
                 {
                     Id = Guid.Parse(reader["Id"].ToString()!),
                     SurveyId = Guid.Parse(reader["SurveyId"].ToString()!),
-                    EmployeeId = Guid.Parse(reader["EmployeeId"].ToString()!),
+                    EmployeeId = reader["EmployeeId"] == DBNull.Value ? null : Guid.Parse(reader["EmployeeId"].ToString()!),
                     SubmitDate = Convert.ToDateTime(reader["SubmitDate"]),
                     Status = Convert.ToByte(reader["Status"])
                 });
@@ -66,7 +66,7 @@ namespace khaosat_api.Repositories
 
             cmd.Parameters.AddWithValue("@Id", response.Id);
             cmd.Parameters.AddWithValue("@SurveyId", response.SurveyId);
-            cmd.Parameters.AddWithValue("@EmployeeId", response.EmployeeId);
+            cmd.Parameters.AddWithValue("@EmployeeId", (object?)response.EmployeeId ?? DBNull.Value);
             cmd.Parameters.AddWithValue("@SubmitDate", response.SubmitDate);
             cmd.Parameters.AddWithValue("@Status", response.Status);
 
@@ -80,7 +80,7 @@ namespace khaosat_api.Repositories
             using var conn = _factory.Create();
             conn.Open();
 
-            const string sql = "SELECT SurveyId, COUNT(DISTINCT EmployeeId) AS CompletedCount FROM SurveyResponse GROUP BY SurveyId";
+            const string sql = "SELECT SurveyId, COUNT(*) AS CompletedCount FROM SurveyResponse GROUP BY SurveyId";
             using var cmd = new SqlCommand(sql, conn);
 
             using var reader = cmd.ExecuteReader();

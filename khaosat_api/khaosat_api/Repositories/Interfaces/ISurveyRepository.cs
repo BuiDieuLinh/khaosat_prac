@@ -12,6 +12,8 @@ namespace khaosat_api.Repositories.Interfaces
         void Add(Survey survey);
         void Update(Survey survey);
         void UpdateStatus(Guid id, byte status);
+        void UpdateAccessType(Guid id, int accessType);
+        void UpdateAnonymousMode(Guid id, bool anonymousMode);
         void DeleteElementsAndOptions(Guid surveyId);
     }
 }
