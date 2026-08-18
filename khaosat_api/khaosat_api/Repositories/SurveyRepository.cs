@@ -186,7 +186,7 @@ namespace khaosat_api.Repositories
                     MaxAttempts = reader["MaxAttempts"] == DBNull.Value ? null : Convert.ToInt32(reader["MaxAttempts"]),
                     AccessType = HasColumn(reader, "AccessType") && reader["AccessType"] != DBNull.Value ? Convert.ToInt32(reader["AccessType"]) : 1,
                     AnonymousMode = HasColumn(reader, "AnonymousMode") && reader["AnonymousMode"] != DBNull.Value && Convert.ToBoolean(reader["AnonymousMode"]),
-                    
+
                     UpdatedDate = reader["UpdatedDate"] == DBNull.Value ? null : Convert.ToDateTime(reader["UpdatedDate"])
                 });
             }

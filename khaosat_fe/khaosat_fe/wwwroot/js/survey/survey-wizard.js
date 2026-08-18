@@ -12,48 +12,80 @@
         return false;
     }
 
+    function isPublicAccess() {
+        const accessTypeBox = $("#surveyAccessType").dxSelectBox("instance");
+        const val = accessTypeBox ? accessTypeBox.option("value") : 1;
+        return parseInt(val) === 2;
+    }
+
+    function updateStep2State(isPublic) {
+        const $ind2 = $("#stepIndicator2");
+        if (!$ind2.length) return;
+
+        if (isPublic) {
+            $ind2.addClass("step-disabled");
+            $ind2.attr("title", "Khảo sát công khai không cần chọn đối tượng nhận");
+            $ind2.find(".step-sub").text("Bỏ qua khi Public");
+            $ind2.find(".step-badge").html('<i class="dx-icon-close" style="font-size: 13px;"></i>');
+            if (currentStep === 2) {
+                Survey.Wizard.goToStep(1);
+            }
+        } else {
+            $ind2.removeClass("step-disabled");
+            $ind2.removeAttr("title");
+            $ind2.find(".step-sub").text("Phạm vi gửi bài");
+            $ind2.find(".step-badge").text("2");
+        }
+    }
+
     function renderPreview() {
         const $container = $("#previewContent");
         if (!$container.length) return;
 
-        const isCompany = $("#isWholeCompany").dxCheckBox("instance") ? $("#isWholeCompany").dxCheckBox("instance").option("value") : true;
+        const isPublic = isPublicAccess();
         let targetText = "Toàn bộ công ty (Whole Company)";
-        if (!isCompany) {
-            const treeWidget = $("#targetTree").dxTreeView("instance");
-            if (treeWidget) {
-                const selectedNodes = treeWidget.getSelectedNodes() || [];
-                const deptNames = [];
-                const posNames = [];
-                const processedDeptIds = new Set();
 
-                selectedNodes.forEach(node => {
-                    const isDeptNode = !node.parent || !node.parent.itemData || !node.parent.key;
-                    if (isDeptNode && node.selected === true) {
-                        const dText = Survey.Wizard ? Survey.Wizard.getTreeNodeDisplayExpr(node.itemData) : (node.itemData.departmentName || node.itemData.DepartmentName);
-                        const dId = node.itemData.id || node.itemData.Id;
-                        if (dText) deptNames.push(dText);
-                        if (dId) processedDeptIds.add(dId);
-                    }
-                });
+        if (isPublic) {
+            targetText = '<span class="badge bg-info-subtle text-info border border-info-subtle px-2 py-1 rounded">Công khai (Public Link - Không giới hạn đối tượng nội bộ)</span>';
+        } else {
+            const isCompany = $("#isWholeCompany").dxCheckBox("instance") ? $("#isWholeCompany").dxCheckBox("instance").option("value") : true;
+            if (!isCompany) {
+                const treeWidget = $("#targetTree").dxTreeView("instance");
+                if (treeWidget) {
+                    const selectedNodes = treeWidget.getSelectedNodes() || [];
+                    const deptNames = [];
+                    const posNames = [];
+                    const processedDeptIds = new Set();
 
-                selectedNodes.forEach(node => {
-                    const isPosNode = node.parent && node.parent.itemData && node.parent.key;
-                    if (isPosNode && node.selected === true) {
-                        const deptId = node.parent.itemData.id || node.parent.itemData.Id;
-                        if (!processedDeptIds.has(deptId)) {
-                            const pText = Survey.Wizard ? Survey.Wizard.getTreeNodeDisplayExpr(node.itemData) : (node.itemData.positionName || node.itemData.PositionName);
-                            const dName = node.parent.itemData.departmentName || node.parent.itemData.DepartmentName;
-                            if (pText) {
-                                posNames.push(dName ? `${pText} (${dName})` : pText);
+                    selectedNodes.forEach(node => {
+                        const isDeptNode = !node.parent || !node.parent.itemData || !node.parent.key;
+                        if (isDeptNode && node.selected === true) {
+                            const dText = Survey.Wizard ? Survey.Wizard.getTreeNodeDisplayExpr(node.itemData) : (node.itemData.departmentName || node.itemData.DepartmentName);
+                            const dId = node.itemData.id || node.itemData.Id;
+                            if (dText) deptNames.push(dText);
+                            if (dId) processedDeptIds.add(dId);
+                        }
+                    });
+
+                    selectedNodes.forEach(node => {
+                        const isPosNode = node.parent && node.parent.itemData && node.parent.key;
+                        if (isPosNode && node.selected === true) {
+                            const deptId = node.parent.itemData.id || node.parent.itemData.Id;
+                            if (!processedDeptIds.has(deptId)) {
+                                const pText = Survey.Wizard ? Survey.Wizard.getTreeNodeDisplayExpr(node.itemData) : (node.itemData.positionName || node.itemData.PositionName);
+                                const dName = node.parent.itemData.departmentName || node.parent.itemData.DepartmentName;
+                                if (pText) {
+                                    posNames.push(dName ? `${pText} (${dName})` : pText);
+                                }
                             }
                         }
-                    }
-                });
+                    });
 
-                const parts = [];
-                if (deptNames.length) parts.push(`<strong>Phòng ban:</strong> ${deptNames.join(", ")}`);
-                if (posNames.length) parts.push(`<strong>Chức vụ:</strong> ${posNames.join(", ")}`);
-                targetText = parts.join(" | ") || "Chưa chọn đối tượng";
+                    const parts = [];
+                    if (deptNames.length) parts.push(`<strong>Phòng ban:</strong> ${deptNames.join(", ")}`);
+                    if (posNames.length) parts.push(`<strong>Chức vụ:</strong> ${posNames.join(", ")}`);
+                    targetText = parts.join(" | ") || "Chưa chọn đối tượng";
+                }
             }
         }
 
@@ -64,7 +96,12 @@
         const endDate = $("#surveyEndDate").dxDateBox("instance") ? $("#surveyEndDate").dxDateBox("instance").option("text") : "Không giới hạn";
         const maxAttempts = $("#surveyMaxAttempts").dxNumberBox("instance") ? $("#surveyMaxAttempts").dxNumberBox("instance").option("value") : null;
         const statusVal = $("#surveyStatus").dxSelectBox("instance") ? $("#surveyStatus").dxSelectBox("instance").option("value") : 1;
-        const statusText = statusVal === 1 ? '<span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-1 rounded-pill">Đang mở (Published)</span>' : '<span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle px-3 py-1 rounded-pill">Lưu nháp (Draft)</span>';
+        const statusText = statusVal === 1 
+            ? '<span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-1 rounded-pill">Đang mở (Published)</span>' 
+            : '<span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle px-3 py-1 rounded-pill">Lưu nháp (Draft)</span>';
+        const accessTypeText = isPublic 
+            ? '<span class="badge bg-info-subtle text-info border border-info-subtle px-3 py-1 rounded-pill">Public (Công khai qua Link)</span>' 
+            : '<span class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-1 rounded-pill">Internal (Nội bộ hệ thống)</span>';
 
         const elements = Survey.Element.gatherSurveyData() || [];
 
@@ -143,6 +180,7 @@
                             <div class="row g-3 text-secondary small">
                                 <div class="col-md-3"><strong>Mã khảo sát:</strong> <span class="text-dark fw-bold">${code}</span></div>
                                 <div class="col-md-6"><strong>Tên khảo sát:</strong> <span class="text-dark fw-bold">${name}</span></div>
+                                <div class="col-md-3"><strong>Loại truy cập:</strong> ${accessTypeText}</div>
                                 <div class="col-md-3"><strong>Trạng thái:</strong> ${statusText}</div>
                                 <div class="col-md-3"><strong>Thời gian bắt đầu:</strong> <span class="text-dark">${startDate}</span></div>
                                 <div class="col-md-3"><strong>Thời gian kết thúc:</strong> <span class="text-dark">${endDate}</span></div>
@@ -167,6 +205,15 @@
     Survey.Wizard = {
         getCurrentStep: function () {
             return currentStep;
+        },
+
+        isPublic: function () {
+            return isPublicAccess();
+        },
+
+        onAccessTypeChanged: function (e) {
+            const isPublic = parseInt(e.value) === 2;
+            updateStep2State(isPublic);
         },
 
         onWholeCompanyChanged: function (e) {
@@ -203,8 +250,6 @@
             return "";
         },
 
-
-
         onTreeContentReady: function (e) {
             const isCompany = $("#isWholeCompany").dxCheckBox("instance") ? $("#isWholeCompany").dxCheckBox("instance").option("value") : true;
             const tree = e.component;
@@ -236,18 +281,6 @@
 
         validateStep: function (step) {
             if (step === 1) {
-                const isCompany = $("#isWholeCompany").dxCheckBox("instance") ? $("#isWholeCompany").dxCheckBox("instance").option("value") : true;
-                if (!isCompany) {
-                    const treeWidget = $("#targetTree").dxTreeView("instance");
-                    const selectedNodes = treeWidget ? treeWidget.getSelectedNodes() : [];
-                    if (!selectedNodes || selectedNodes.length === 0) {
-                        return showError("Khi không chọn 'Toàn công ty', bạn phải chọn ít nhất một Phòng ban hoặc Chức vụ áp dụng!");
-                    }
-                }
-                return true;
-            }
-
-            if (step === 2) {
                 const code = String($("#surveyCode").dxTextBox("instance") ? $("#surveyCode").dxTextBox("instance").option("value") || "" : "").trim();
                 const name = String($("#surveyName").dxTextBox("instance") ? $("#surveyName").dxTextBox("instance").option("value") || "" : "").trim();
                 const startDate = $("#surveyStartDate").dxDateBox("instance") ? $("#surveyStartDate").dxDateBox("instance").option("value") : null;
@@ -265,6 +298,21 @@
                 return true;
             }
 
+            if (step === 2) {
+                if (isPublicAccess()) {
+                    return true;
+                }
+                const isCompany = $("#isWholeCompany").dxCheckBox("instance") ? $("#isWholeCompany").dxCheckBox("instance").option("value") : true;
+                if (!isCompany) {
+                    const treeWidget = $("#targetTree").dxTreeView("instance");
+                    const selectedNodes = treeWidget ? treeWidget.getSelectedNodes() : [];
+                    if (!selectedNodes || selectedNodes.length === 0) {
+                        return showError("Khi không chọn 'Toàn công ty', bạn phải chọn ít nhất một Phòng ban hoặc Chức vụ áp dụng!");
+                    }
+                }
+                return true;
+            }
+
             if (step === 3) {
                 const elements = Survey.Element.gatherSurveyData();
                 if (!elements || !elements.length) {
@@ -278,9 +326,22 @@
 
         goToStep: function (targetStep) {
             if (targetStep < 1 || targetStep > 4) return;
-             
+
+            const isPub = isPublicAccess();
+
+            if (targetStep === 2 && isPub) {
+                if (currentStep === 1) {
+                    targetStep = 3;
+                } else if (currentStep >= 3) {
+                    targetStep = 1;
+                } else {
+                    return;
+                }
+            }
+
             if (targetStep > currentStep) {
                 for (let s = currentStep; s < targetStep; s++) {
+                    if (s === 2 && isPub) continue;
                     if (!Survey.Wizard.validateStep(s)) {
                         return;
                     }
@@ -292,20 +353,24 @@
             if (currentStep === 4) {
                 renderPreview();
             }
-             
+
             $(".wizard-content-step").hide();
             $(`#wizardStep${currentStep}`).fadeIn(200);
-             
+
             for (let i = 1; i <= 4; i++) {
                 const $ind = $(`#stepIndicator${i}`);
-                $ind.removeClass("active completed");
-                if (i === currentStep) {
-                    $ind.addClass("active");
-                } else if (i < currentStep) {
-                    $ind.addClass("completed");
+                if (i === 2 && isPub) {
+                    $ind.removeClass("active completed").addClass("step-disabled");
+                } else {
+                    $ind.removeClass("active completed");
+                    if (i === currentStep) {
+                        $ind.addClass("active");
+                    } else if (i < currentStep) {
+                        $ind.addClass("completed");
+                    }
                 }
             }
-             
+
             if (currentStep === 1) {
                 $("#btnWizardBack").hide();
                 $("#btnWizardNext").show();
@@ -326,15 +391,33 @@
         },
 
         nextStep: function () {
-            Survey.Wizard.goToStep(currentStep + 1);
+            const isPub = isPublicAccess();
+            if (currentStep === 1) {
+                Survey.Wizard.goToStep(isPub ? 3 : 2);
+            } else if (currentStep === 2) {
+                Survey.Wizard.goToStep(3);
+            } else if (currentStep === 3) {
+                Survey.Wizard.goToStep(4);
+            }
         },
 
         prevStep: function () {
-            Survey.Wizard.goToStep(currentStep - 1);
+            const isPub = isPublicAccess();
+            if (currentStep === 4) {
+                Survey.Wizard.goToStep(3);
+            } else if (currentStep === 3) {
+                Survey.Wizard.goToStep(isPub ? 1 : 2);
+            } else if (currentStep === 2) {
+                Survey.Wizard.goToStep(1);
+            }
         },
 
         collectTargets: function () {
             const targets = [];
+            if (isPublicAccess()) {
+                return targets;
+            }
+
             const isCompany = $("#isWholeCompany").dxCheckBox("instance") ? $("#isWholeCompany").dxCheckBox("instance").option("value") : true;
 
             if (isCompany) {
@@ -372,6 +455,10 @@
             }
 
             return targets;
+        },
+
+        initStepState: function () {
+            updateStep2State(isPublicAccess());
         }
     };
 

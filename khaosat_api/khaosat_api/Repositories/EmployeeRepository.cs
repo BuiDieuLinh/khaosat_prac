@@ -1,8 +1,8 @@
+using System.Data.SqlClient;
 using khaosat_api.Data;
 using khaosat_api.DTOs;
 using khaosat_api.Models;
 using khaosat_api.Repositories.Interfaces;
-using System.Data.SqlClient;
 
 namespace khaosat_api.Repositories
 {
@@ -201,7 +201,7 @@ namespace khaosat_api.Repositories
                         RoleName = reader["RoleName"].ToString()!
                     });
                 }
-                
+
             }
 
             return employees.Values.ToList();
@@ -518,7 +518,7 @@ namespace khaosat_api.Repositories
             {
                 const string sql = "SELECT * FROM Position WHERE DepartmentId = @DepartmentId OR @DepartmentId = '00000000-0000-0000-0000-000000000000'";
                 using var cmd = new SqlCommand(sql, conn);
-                cmd.Parameters.AddWithValue("@DepartmentId", departmentId);     
+                cmd.Parameters.AddWithValue("@DepartmentId", departmentId);
                 using var reader = cmd.ExecuteReader();
                 while (reader.Read())
                 {

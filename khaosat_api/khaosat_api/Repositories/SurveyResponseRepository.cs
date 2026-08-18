@@ -1,7 +1,7 @@
+using System.Data.SqlClient;
 using khaosat_api.Data;
 using khaosat_api.Models;
 using khaosat_api.Repositories.Interfaces;
-using System.Data.SqlClient;
 
 namespace khaosat_api.Repositories
 {

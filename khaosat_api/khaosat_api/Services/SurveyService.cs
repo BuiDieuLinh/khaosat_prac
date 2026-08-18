@@ -482,6 +482,7 @@ namespace khaosat_api.Services
             var survey = new Survey
             {
                 Id = surveyId,
+                Code = dto.Code,
                 Name = dto.Name,
                 Description = dto.Description,
                 StartDate = dto.StartDate,

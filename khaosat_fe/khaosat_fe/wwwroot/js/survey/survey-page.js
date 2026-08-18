@@ -470,6 +470,10 @@
             if (isEdit && codeEditor) {
                 codeEditor.option("disabled", true);
             }
+
+            if (Survey.Wizard && typeof Survey.Wizard.initStepState === "function") {
+                Survey.Wizard.initStepState();
+            }
         }
     };
 

@@ -1,6 +1,4 @@
 using khaosat_api.Models;
-using System;
-using System.Collections.Generic;
 
 namespace khaosat_api.Repositories.Interfaces
 {

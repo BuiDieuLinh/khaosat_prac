@@ -9,7 +9,7 @@ namespace khaosat_api.Models
 
         [Display(Name = "Mã khảo sát")]
         [Required(ErrorMessage = "Mã khảo sát không được để trống")]
-        [StringLength(8, MinimumLength = 2, ErrorMessage = "Độ dài phải từ 2 đến 8 ký tự")]
+        [StringLength(50, MinimumLength = 2, ErrorMessage = "Độ dài phải từ 2 đến 50 ký tự")]
         public string Code { get; set; } = string.Empty;
 
         [Display(Name = "Tên khảo sát")]
