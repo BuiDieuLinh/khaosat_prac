@@ -1,4 +1,5 @@
 using khaosat_api.Data;
+using khaosat_api.Hubs;
 using khaosat_api.Repositories;
 using khaosat_api.Repositories.Interfaces;
 using khaosat_api.Services;
@@ -18,6 +19,7 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 
 builder.Services.AddControllers();
+builder.Services.AddSignalR();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
@@ -58,11 +60,13 @@ builder.Services.AddSwaggerGen(options =>
 
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowAll", policy =>
+    options.AddPolicy("MvcClient", policy =>
     {
-        policy.AllowAnyOrigin()
-              .AllowAnyHeader()
-              .AllowAnyMethod();
+        policy
+            .WithOrigins("https://localhost:44355")
+            .AllowAnyHeader()
+            .AllowAnyMethod()
+            .AllowCredentials();
     });
 });
 
@@ -81,10 +85,15 @@ builder.Services.AddScoped<ISurveyTargetRepository, SurveyTargetRepository>();
 builder.Services.AddScoped<ISurveyParticipantRepository, SurveyParticipantRepository>();
 builder.Services.AddScoped<ISurveyAccessRepository, SurveyAccessRepository>();
 builder.Services.AddScoped<IAuditLogRepository, AuditLogRepository>();
+builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
 
 // Services
 builder.Services.AddScoped<ISurveyService, SurveyService>();
 builder.Services.AddScoped<IEmployeeService, EmployeeService>();
+builder.Services.AddScoped<INotificationService, NotificationService>();
+builder.Services.AddScoped<ISurveyExpirationNotificationService, SurveyExpirationNotificationService>();
+builder.Services.AddHostedService<SurveyExpirationNotificationBackgroundService>();
+builder.Services.AddSingleton<Microsoft.AspNetCore.SignalR.IUserIdProvider, NameIdentifierUserIdProvider>();
 
 
 builder.Services.Configure<ForwardedHeadersOptions>(options =>
@@ -115,6 +124,18 @@ builder.Services.AddAuthentication(options =>
     };
     options.Events = new JwtBearerEvents
     {
+        OnMessageReceived = context =>
+        {
+            var accessToken = context.Request.Query["access_token"];
+            var path = context.HttpContext.Request.Path;
+
+            if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/hubs/notification"))
+            {
+                context.Token = accessToken;
+            }
+
+            return Task.CompletedTask;
+        },
         OnTokenValidated = async context =>
         {
             var userId = context.Principal?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
@@ -166,10 +187,12 @@ if (app.Environment.IsDevelopment())
 
 app.UseForwardedHeaders();
 app.UseHttpsRedirection();
+app.UseCors("MvcClient");
 
 app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+app.MapHub<NotificationHub>("/hubs/notification");
 
 app.Run();

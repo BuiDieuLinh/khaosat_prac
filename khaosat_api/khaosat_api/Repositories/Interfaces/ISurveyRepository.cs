@@ -7,6 +7,7 @@ namespace khaosat_api.Repositories.Interfaces
     public interface ISurveyRepository
     {
         List<Survey> GetAll();
+        List<Survey> GetSurveysExpiringOn(DateTime startUtc, DateTime endUtc);
         PagedResult<Survey> GetSurveys(SurveyFilterDto filter, Guid? currentUserId = null);
         Survey? GetById(Guid id);
         void Add(Survey survey);

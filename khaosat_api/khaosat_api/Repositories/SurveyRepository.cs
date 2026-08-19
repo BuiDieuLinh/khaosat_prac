@@ -56,6 +56,51 @@ namespace khaosat_api.Repositories
             return result;
         }
 
+        public List<Survey> GetSurveysExpiringOn(DateTime startUtc, DateTime endUtc)
+        {
+            var surveys = new List<Survey>();
+
+            using var conn = _factory.Create();
+            conn.Open();
+
+            const string sql = @"
+                SELECT Id, Code, Name, Description, StartDate, EndDate, Status, MaxAttempts,
+                       AccessType, AnonymousMode, CreatedDate, UpdatedDate
+                FROM Survey
+                WHERE Status = @ActiveStatus
+                  AND EndDate IS NOT NULL
+                  AND EndDate >= @StartUtc
+                  AND EndDate < @EndUtc
+                ORDER BY EndDate ASC";
+
+            using var cmd = new SqlCommand(sql, conn);
+            cmd.Parameters.AddWithValue("@ActiveStatus", (byte)SurveyStatus.Active);
+            cmd.Parameters.AddWithValue("@StartUtc", DateTime.SpecifyKind(startUtc, DateTimeKind.Unspecified));
+            cmd.Parameters.AddWithValue("@EndUtc", DateTime.SpecifyKind(endUtc, DateTimeKind.Unspecified));
+
+            using var reader = cmd.ExecuteReader();
+            while (reader.Read())
+            {
+                surveys.Add(new Survey
+                {
+                    Id = (Guid)reader["Id"],
+                    Code = reader["Code"].ToString()!,
+                    Name = reader["Name"].ToString()!,
+                    Description = reader["Description"] == DBNull.Value ? null : reader["Description"].ToString(),
+                    StartDate = reader["StartDate"] == DBNull.Value ? null : Convert.ToDateTime(reader["StartDate"]),
+                    EndDate = reader["EndDate"] == DBNull.Value ? null : Convert.ToDateTime(reader["EndDate"]),
+                    Status = (SurveyStatus)Convert.ToByte(reader["Status"]),
+                    MaxAttempts = reader["MaxAttempts"] == DBNull.Value ? null : Convert.ToInt32(reader["MaxAttempts"]),
+                    AccessType = reader["AccessType"] == DBNull.Value ? 1 : Convert.ToInt32(reader["AccessType"]),
+                    AnonymousMode = reader["AnonymousMode"] != DBNull.Value && Convert.ToBoolean(reader["AnonymousMode"]),
+                    CreatedDate = Convert.ToDateTime(reader["CreatedDate"]),
+                    UpdatedDate = reader["UpdatedDate"] == DBNull.Value ? null : Convert.ToDateTime(reader["UpdatedDate"])
+                });
+            }
+
+            return surveys;
+        }
+
         private void AddParameters(SqlCommand cmd, SurveyFilterDto filter, Guid? currentUserId)
         {
             if (!string.IsNullOrWhiteSpace(filter.SearchKeyword))

@@ -207,6 +207,31 @@ namespace khaosat_api.Repositories
             return employees.Values.ToList();
         }
 
+        public List<Guid> GetActiveAdministratorIds()
+        {
+            var result = new List<Guid>();
+            using var conn = _factory.Create();
+            conn.Open();
+
+            const string sql = @"
+                SELECT DISTINCT e.Id
+                FROM Employee e
+                INNER JOIN UserRole ur ON ur.EmployeeId = e.Id
+                INNER JOIN Role r ON r.Id = ur.RoleId
+                WHERE e.IsActive = 1
+                  AND r.RoleName = @RoleName";
+
+            using var cmd = new SqlCommand(sql, conn);
+            cmd.Parameters.AddWithValue("@RoleName", "Admin");
+            using var reader = cmd.ExecuteReader();
+            while (reader.Read())
+            {
+                result.Add(reader.GetGuid(0));
+            }
+
+            return result;
+        }
+
         public PagedResult<EmployeeResponse> GetPaged(EmployeeFilterDto filter)
         {
             int pageNumber = filter.PageNumber < 1 ? 1 : filter.PageNumber;

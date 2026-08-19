@@ -12,6 +12,7 @@ namespace khaosat_api.Repositories.Interfaces
         void Add(Employee employee);
         int GetActiveEmployeeCount();
         List<EmployeeResponse> GetAll();
+        List<Guid> GetActiveAdministratorIds();
         PagedResult<EmployeeResponse> GetPaged(EmployeeFilterDto filter);
         List<Department> GetDepartment();
         List<Position> GetPosition(Guid departmentId);

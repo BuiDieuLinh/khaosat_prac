@@ -960,3 +960,20 @@ footer a:hover {
     padding: 0.25rem 0.5rem;
     border-radius: 4px;
 }
+
+@keyframes notification-bell-ring {
+    0%, 100% { transform: rotate(0); }
+    15%, 45%, 75% { transform: rotate(14deg); }
+    30%, 60%, 90% { transform: rotate(-14deg); }
+}
+
+.notification-bell-ringing {
+    animation: notification-bell-ring 0.8s ease-in-out both;
+    transform-origin: 50% 10%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .notification-bell-ringing {
+        animation: none;
+    }
+}
